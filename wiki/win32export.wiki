@@ -1,0 +1,19 @@
+#infomation about win32export
+
+= Introduction =
+
+export virable on windows like *nix
+
+
+= Details =
+
+You should be used to use "export" on Linux and it is really convenient.
+So we can do the same thing on windows via *win32export*
+
+{{{
+import win32export
+win32export.export( "name" , "value" )
+}}}
+
+That's all.
+And this export is permanent , and you don't need to reboot your system.
