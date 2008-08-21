@@ -5,7 +5,7 @@ Author :  winterTTr
 Mail   :  winterTTr@gmail.com
 Desc   :  The 'export' command on win32 platform
 Module :  win32export.py
-Version:  $Reversion$
+Version:  $Revision$
 NOTE   :  Make sure the pywin32 has been installed.
 
 """
