@@ -1,12 +1,11 @@
 """
 -*- encoding=utf-8 -*-
 
-Author :  winterTTr
-Mail   :  winterTTr@gmail.com
+Author :  winterTTr <winterTTr@gmail.com>
 Desc   :  The 'export' command on win32 platform
-Module :  win32export.py
-Version:  $Revision$
+Name   :  win32export.py
 NOTE   :  Make sure the pywin32 has been installed.
+Licence:  MIT License
 
 """
 
@@ -16,6 +15,11 @@ try :
     import win32api
 except ImportError:
     raise ImportError , "You Should install pywin32 if you want to use win32export"
+
+__author__ = "winterTTr <winterTTr@gmail.com>"
+__svnid__ = "$Id$"
+__version__ = "$Revision$"[11:-2]
+
 
 def export ( name , value , update_system = True ):
     """
