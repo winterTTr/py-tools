@@ -1,6 +1,6 @@
 = Introduction =
 
-export viriable on windows like Linux
+export variable on windows like Linux
 
 
 = Details =
