@@ -1,6 +1,6 @@
 = Introduction =
 
-export virable on windows like *nix
+export viriable on windows like Linux
 
 
 = Details =
