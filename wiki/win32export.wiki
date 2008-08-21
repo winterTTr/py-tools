@@ -15,3 +15,6 @@ win32export.export( "name" , "value" )
 
 That's all.
 And this export is permanent , and you don't need to reboot your system.
+
+NOTE:
+This is script uses _pywin32_ , so make sure you have installed _pywin32_.
