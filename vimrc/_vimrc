@@ -1,7 +1,6 @@
 "   Filename: .vimrc
 "   Author:   winterTTr
 "   Mail:     winterTTr@gmail.com
-"   Date:     2008/08/21
 "   svnid:  $Id$
 
 "=============================================================================
@@ -13,17 +12,17 @@ set langmenu=none
 set helplang=cn
 set fileformats=unix,dos
 if has("multi_byte")
-	set bomb
-	set encoding=utf-8
-	if has("unix")
-		set fileencodings=ucs-bom,utf-8,euc-cn,prc,latin1
-	endif
+    set bomb
+    set encoding=utf-8
+    if has("unix")
+        set fileencodings=ucs-bom,utf-8,euc-cn,prc,latin1
+    endif
 
-	if has("win32")
-		set fileencodings=ucs-bom,utf-8,cp932,cp936,cp950,prc,latin1
-	endif
+    if has("win32")
+        set fileencodings=ucs-bom,utf-8,cp932,cp936,cp950,prc,latin1
+    endif
 else
-	echoerr "Sorry,this version of (g)vim was not compiled with +multi_byte"
+    echoerr "Sorry,this version of (g)vim was not compiled with +multi_byte"
 endif
 "}}}1
 "=============================================================================
@@ -55,13 +54,13 @@ if has("gui_running")
     set columns=130
     set lines=45
     "colorscheme darkblue
-    colorscheme desert
-	set background=dark
+    colorscheme desertEx
+    set background=dark
     "set guioptions=aegimtrLv
     set guioptions=aegimtrL
     let Tlist_Show_Menu=1
     set guifont=Bitstream_Vera_Sans_Mono:h11:cANSI
-	set guifontwide=GB_YuanHei:h12:cGB2312
+    set guifontwide=NSimsun:h12
 endif
 " ------------------- }}}2
 
@@ -102,36 +101,37 @@ set autoindent
 
 " --- auto command ---- {{{2
 if !exists("autocommands_loaded")
-	let autocommands_loaded = 1
-	autocmd FileType * :set formatoptions=tcql autoindent comments&
-	autocmd FileType css :set formatoptions=cql autoindent
-	autocmd FileType c,cpp,h,java :set formatoptions=croql smartindent
-				\ comments=sr:/*,mb:*,ex:*/,:// expandtab
-	autocmd BufEnter * :cd %:p:h
-	autocmd CursorMoved *.c,*.cpp,*.h,*.java call ColumnHighlight()
-	autocmd InsertEnter *.c,*.cpp,*.h,*.java call RemoveHighlightOnInsertEnter()
-	augroup CPPFile "{{{3
-		au!
-		autocmd FileType cpp syn match cppFuncDef "::\~\?\zs\h\w*\ze([^)]*\()\s*\(const\)\?\)\?$"
-					\| hi def link cppFuncDef Special
-	augroup END   " }}}3
-	"au GUIEnter * simalt ~x
-	" vim -b : edit binary using xxd-format!
-	augroup Binary " {{{3
-		au!
-		au BufReadPre  *.bin,*.exe let &bin=1
-		au BufReadPost *.bin,*.exe if &bin | %!xxd
-		au BufReadPost *.bin,*.exe set ft=xxd | endif
-		au BufRead *.exe,*.bin if &bin | set noendofline | endif
-		au BufWritePre *.bin,*.exe if &bin | %!xxd -r
-		au BufWritePre *.bin,*.exe endif
-		au BufWritePost *.bin,*.exe if &bin | %!xxd
-		au BufWritePost *.bin,*.exe set nomod | endif
-	augroup END  " }}}3
-	augroup TTrSessionManager " {{{3
-		autocmd VimLeave * call TTr_SessionSave()
-		autocmd VimEnter * call TTr_SessionLoad()
-	augroup END  " }}}3
+    let autocommands_loaded = 1
+    autocmd FileType * :set formatoptions=tcql autoindent comments&
+    autocmd FileType css :set formatoptions=cql autoindent
+    autocmd FileType c,cpp,h,java :set formatoptions=croql smartindent
+                \ comments=sr:/*,mb:*,ex:*/,:// expandtab
+    autocmd BufEnter * :cd %:p:h
+    autocmd CursorMoved *.c,*.cpp,*.h,*.java call ColumnHighlight()
+    autocmd InsertEnter *.c,*.cpp,*.h,*.java call RemoveHighlightOnInsertEnter()
+    augroup CPPFile "{{{3
+        au!
+        autocmd FileType cpp syn match cppFuncDef "::\~\?\zs\h\w*\ze([^)]*\()\s*\(const\)\?\)\?$"
+                    \| hi def link cppFuncDef Special
+    augroup END   " }}}3
+    "au GUIEnter * simalt ~x
+    " vim -b : edit binary using xxd-format!
+    augroup Binary " {{{3
+        au!
+        au BufReadPre  *.bin,*.exe let &bin=1
+        au BufReadPost *.bin,*.exe if &bin | %!xxd
+        au BufReadPost *.bin,*.exe set ft=xxd | endif
+        au BufRead *.exe,*.bin if &bin | set noendofline | endif
+        au BufWritePre *.bin,*.exe if &bin | %!xxd -r
+        au BufWritePre *.bin,*.exe endif
+        au BufWritePost *.bin,*.exe if &bin | %!xxd
+        au BufWritePost *.bin,*.exe set nomod | endif
+    augroup END  " }}}3
+    augroup TTrSessionManager " {{{3
+        au!
+        "autocmd VimLeave * call TTr_SessionSave()
+        "autocmd VimEnter * call TTr_SessionLoad()
+    augroup END  " }}}3
 endif
 " ---------------------}}}2
 
@@ -199,7 +199,7 @@ cnoremap    <m-i>   <c-r>=substitute(getline('.')[(col('.')-1):],'\W.*','','g')<
 " --------------------------------------------------- }}}2
 
 " --- HiaHia if you can know --- {{{2
-noremap <F12> :%s/\\u\(\w\w\w\w\)/\=nr2char("0x".expand("<cword>")[1:])/g<CR>
+"noremap <F12> :%s/\\u\(\w\w\w\w\)/\=nr2char("0x".expand("<cword>")[1:])/g<CR>
 " ------------------------------ }}}2
 
 " --- Scroll using <C-J> and <C-K> --- {{{2
@@ -222,12 +222,12 @@ inoremap    <C-L>   <right>
 " ---------------------------------------------------- }}}2
 
 " --- Change the fonds via <F9> <F10> <F11>--- {{{2
-nmap <F9> :set guifont=Lucida_Sans_Typewriter:h11:cANSI<CR>
-nmap <F10> :set guifont=GB_YuanHei:h12:cGB2312<CR>
+"nmap <F9> :set guifont=Lucida_Sans_Typewriter:h11:cANSI<CR>
+"nmap <F10> :set guifont=GB_YuanHei:h12:cGB2312<CR>
 nmap <F11> :set guifont=*<CR>
 " ---------------------------------- }}}2
 
-" --- <C-/> no highlight :nohl --- {{{2
+" --- <M-/> no highlight :nohl --- {{{2
 nnoremap <silent> <M-/> :nohl<CR>
 " -------------------------------- }}}2
 
@@ -260,14 +260,19 @@ nnoremap p pmz=`]`z
 nnoremap <c-p> p
 " ------------------------------------ }}}2
 
-" -- Open the current files directory --- {{{2
+" --- Open with EmEditor --- {{{2
+nnoremap <F9>  execute '! start "EmEditor" "C:\Program Files\EmEditor\EmEditor.exe" '.substitute(expand("%:p"),'/','\','g')<CR>
+" ------------------------------------ }}}2
+
+" -- Open the current files directory and command line here --- {{{2
 if has("gui_running")
-	if has("win32")
-		" Open the folder containing the currently open file. Double <CR> at end
-		" is so you don't have to hit return after command. Double quotes are
-		" not necessary in the 'explorer.exe %:p:h' section.
-		nnoremap <silent> <C-F5> :if expand("%:p:h") != "" \|execute '!start explorer.exe '.substitute(expand("%:p:h"),'/','\','g')\|endif<CR>
-	endif
+    if has("win32")
+        " Open the folder containing the currently open file. Double <CR> at end
+        " is so you don't have to hit return after command. Double quotes are
+        " not necessary in the 'explorer.exe %:p:h' section.
+        nnoremap <silent> <C-F5> :if expand("%:p:h") != "" \|execute '!start explorer.exe '.substitute(expand("%:p:h"),'/','\','g')\|endif<CR>
+        nnoremap <silent> <C-F6> :!start cmd.exe<CR>
+    endif
 endif
 " --------------------------------------- }}}2
 
@@ -281,7 +286,7 @@ set history=100
 lang message en_US
 "}}}1
 "=============================================================================
-"" Abbreviations: {{{1
+" Abbreviations {{{1
 ""--------------------------------------------------
 " See from the TTrCodeAssistor.vim which is wroten by me. :-)
 let g:TTrCodeAssistor_AutoStart=1
@@ -296,24 +301,24 @@ if has("cscope")
     set cscopequickfix=c-,d-,e-,f-,g-,i-,s-,t-
     set cscopetagorder=0  " Using cscope first
     set nocscopeverbose
-	if filereadable("cscope.out")
-		cs add cscope.out
-	elseif $CSCOPE_DB != ""
-		cs add $CSCOPE_DB
-	endif
+    if filereadable("cscope.out")
+        cs add cscope.out
+    elseif $CSCOPE_DB != ""
+        cs add $CSCOPE_DB
+    endif
     set cscopeverbose
 endif
 " --------------- }}}2
 
 " --- Map [from mbbill] -- {{{2
-"	0 or s: Find this C symbol
-"	1 or g: Find this definition
-"	2 or d: Find functions called by this function
-"	3 or c: Find functions calling this function
-"	4 or t: Find this text string
-"	6 or e: Find this egrep pattern
-"	7 or f: Find this file
-"	8 or i: Find files #including this file
+"   0 or s: Find this C symbol
+"   1 or g: Find this definition
+"   2 or d: Find functions called by this function
+"   3 or c: Find functions calling this function
+"   4 or t: Find this text string
+"   6 or e: Find this egrep pattern
+"   7 or f: Find this file
+"   8 or i: Find files #including this file
 nmap gns :cs find s <C-R>=expand("<cword>")<CR><CR>
 nmap gng :cs find g <C-R>=expand("<cword>")<CR><CR>
 nmap gnc :cs find c <C-R>=expand("<cword>")<CR><CR>
@@ -365,55 +370,55 @@ command!    -nargs=1 UnsetSession :let g:SessionFileName=""
 nnoremap    <silent> <M-o>   :call SwitchBetweenProgrammingFile()<CR>
 
 " Function <SwitchBetweenProgrammingFile> used to detect the file .{{{3
-" 		if exist , split open ; else ask to create.
+"       if exist , split open ; else ask to create.
 function! SwitchBetweenProgrammingFile() "{{{4
 
-	" Open type ( now I set it to vertical split )
-	let FileOpenType = "vertical split "
-	"let FileOpenType = "tabnew "
+    " Open type ( now I set it to vertical split )
+    let FileOpenType = "vertical split "
+    "let FileOpenType = "tabnew "
 
-	" get Current file's expand name and the name without exp including the full path
+    " get Current file's expand name and the name without exp including the full path
     let CurExpName = expand("%:e")
-	let CurFullPathNameNoExp = expand("%:p:r")
-	let CurNameNoExp = expand("%:r")
+    let CurFullPathNameNoExp = expand("%:p:r")
+    let CurNameNoExp = expand("%:r")
 
-	" Make the list for detecting when the current file is H file
-	let ExpIndex = ["cpp","c","java",""]
+    " Make the list for detecting when the current file is H file
+    let ExpIndex = ["cpp","c","java",""]
 
-	" if the CurExpName == H , detecting the possible file and open the first can be readable
-	if CurExpName == "h"
-		"detecting
-		for index in ExpIndex
-			let FullNameForOpen = CurFullPathNameNoExp.".".index
-			if filereadable(FullNameForOpen)
-				execute FileOpenType.FullNameForOpen
-				return
-			endif
-		endfor
-		" if can't find one , ask to create
-		let UserInputExpName = input("create file (<esc> to cancel): ".CurNameNoExp.".",&filetype)
-		if UserInputExpName == ""
-			"execute FileOpenType.CurFullPathNameNoExp
-			return
-		else
-			execute FileOpenType.CurFullPathNameNoExp.".".UserInputExpName
-			return
-		endif
-	endif
-	
-	" if the CurExpName != h , open the H file if exist.
-	if filereadable(CurFullPathNameNoExp.".h")
-		execute FileOpenType.CurFullPathNameNoExp.".h"
-		return
-	else " not exsit , ask to create
-		let UserChoice = input("Create file [".CurNameNoExp.".h] ?[y/n]","y")
-		if UserChoice == "y"
-			execute FileOpenType.CurFullPathNameNoExp.".h"
-			return
-		else " not y
-			return
-		endif
-	endif
+    " if the CurExpName == H , detecting the possible file and open the first can be readable
+    if CurExpName == "h"
+        "detecting
+        for index in ExpIndex
+            let FullNameForOpen = CurFullPathNameNoExp.".".index
+            if filereadable(FullNameForOpen)
+                execute FileOpenType.FullNameForOpen
+                return
+            endif
+        endfor
+        " if can't find one , ask to create
+        let UserInputExpName = input("create file (<esc> to cancel): ".CurNameNoExp.".",&filetype)
+        if UserInputExpName == ""
+            "execute FileOpenType.CurFullPathNameNoExp
+            return
+        else
+            execute FileOpenType.CurFullPathNameNoExp.".".UserInputExpName
+            return
+        endif
+    endif
+    
+    " if the CurExpName != h , open the H file if exist.
+    if filereadable(CurFullPathNameNoExp.".h")
+        execute FileOpenType.CurFullPathNameNoExp.".h"
+        return
+    else " not exsit , ask to create
+        let UserChoice = input("Create file [".CurNameNoExp.".h] ?[y/n]","y")
+        if UserChoice == "y"
+            execute FileOpenType.CurFullPathNameNoExp.".h"
+            return
+        else " not y
+            return
+        endif
+    endif
 
 endfunction "}}}4
 " end function SwitchBetweenProgrammingFile }}}3
@@ -421,55 +426,55 @@ endfunction "}}}4
 
 " --- TTr_ShowProgrammingTags() from VimTips --- {{{2
 function! TTr_ShowProgrammingTags(type)
-	if a:type == 'f'
-		let typeString = 'function'
-	elseif a:type == 'd'
-		let typeString = 'macro'
-	elseif a:type == 'c'
-		let typeString = 'class'
-	endif
+    if a:type == 'f'
+        let typeString = 'function'
+    elseif a:type == 'd'
+        let typeString = 'macro'
+    elseif a:type == 'c'
+        let typeString = 'class'
+    endif
 
 
-	let gf_s = &grepformat
-	let gp_s = &grepprg
+    let gf_s = &grepformat
+    let gp_s = &grepprg
 
-	let &grepformat = '%*\k%*\s'.typeString.'%*\s%l%*\s%f %*\s%m'
-	let &grepprg = 'ctags -x --c-types='.a:type.' --c++-types='.a:type.' --sort=no -o -'
+    let &grepformat = '%*\k%*\s'.typeString.'%*\s%l%*\s%f %*\s%m'
+    let &grepprg = 'ctags -x --c-types='.a:type.' --c++-types='.a:type.' --sort=no -o -'
 
-	write
-	silent! grep %
-	cwindow
+    write
+    silent! grep %
+    cwindow
 
-	let &grepformat = gf_s
-	let &grepprg = gp_s
+    let &grepformat = gf_s
+    let &grepprg = gp_s
 endfunction
 " ----------------------------------- }}}2
 
 " --- FoldSearch() from VimTips --- {{{2
 function! TTr_Foldsearch(search)
-	echohl WarningMsg | echo "setlocal fm=manual" | echohl None
-	setlocal foldmethod=manual
-	silent! normal zE
-	silent! normal G$
-	let folded = 0     "flag to set when a fold is found
-	let flags = "w"    "allow wrapping in the search
-	let line1 =  0     "set marker for beginning of fold
-	while search(a:search, flags) > 0
-		let  line2 = line(".")
-		if (line2 -1 > line1)
-			execute ":" . line1 . "," . (line2-1) . "fold"
-			let folded = 1       "at least one fold has been found
-		endif
-		let line1 = line2     "update marker
-		let flags = "W"       "turn off wrapping
-	endwhile
-	" Now create the last fold which goes to the end of the file.
-	normal $G
-	let  line2 = line(".")
-	if (line2  > line1 && folded == 1)
-		execute ":". line1 . "," . line2 . "fold"
-	endif
-	normal gg0
+    echohl WarningMsg | echo "setlocal fm=manual" | echohl None
+    setlocal foldmethod=manual
+    silent! normal zE
+    silent! normal G$
+    let folded = 0     "flag to set when a fold is found
+    let flags = "w"    "allow wrapping in the search
+    let line1 =  0     "set marker for beginning of fold
+    while search(a:search, flags) > 0
+        let  line2 = line(".")
+        if (line2 -1 > line1)
+            execute ":" . line1 . "," . (line2-1) . "fold"
+            let folded = 1       "at least one fold has been found
+        endif
+        let line1 = line2     "update marker
+        let flags = "W"       "turn off wrapping
+    endwhile
+    " Now create the last fold which goes to the end of the file.
+    normal $G
+    let  line2 = line(".")
+    if (line2  > line1 && folded == 1)
+        execute ":". line1 . "," . line2 . "fold"
+    endif
+    normal gg0
 endfunction
 " --------------------------------- }}}2
 
@@ -488,60 +493,60 @@ function! ColumnHighlight()
     endif
 endfunction
 function! RemoveHighlightOnInsertEnter()
-	if g:TTr_ShowHighlightColumn == 1
-		set nocuc
-	endif
+    if g:TTr_ShowHighlightColumn == 1
+        set nocuc
+    endif
 endfunction
 " --------------------------------- }}}2
 
 " --- toggle the fold with one key <cr> -- {{{2
 function! TTr_ToggleFold()
-	if foldlevel('.') == 0
-		normal! j
-	else
-		if foldclosed('.') < 0
-			. foldclose
-		else
-			. foldopen
-		endif
-	endif
-	" Clear status line
-	echo
+    if foldlevel('.') == 0
+        normal! j
+    else
+        if foldclosed('.') < 0
+            . foldclose
+        else
+            . foldopen
+        endif
+    endif
+    " Clear status line
+    echo
 endfunction
 " ---------------------------------------- }}}2
 
 " --- Hide the function --- {{{2
 function! TTr_HideAll()
-	syn region HideFunctionRegion start="{" end="}" transparent fold
-	syn sync fromstart
-	"set foldnestmax=1
-	set foldmethod=syntax
+    syn region HideFunctionRegion start="{" end="}" transparent fold
+    syn sync fromstart
+    "set foldnestmax=1
+    set foldmethod=syntax
 endfunction
 " ------------------------- }}}2
 
 " --- Load and Save Session --- {{{2
 let g:SessionFileName=""
 if has("win32")
-	let g:PathToSessions = substitute($VIM,'\','/','g')."/sessions/"
+    let g:PathToSessions = substitute($VIM,'\','/','g')."/sessions/"
 else
-	let g:PathToSessions = $HOME."/.vim/sessions/"
+    let g:PathToSessions = $HOME."/.vim/sessions/"
 endif
 function! TTr_SessionLoad()
-	if argc() == 0
-		" gvim started with no files
-		if has("browse") == 1
-			let g:SessionFileName = browse(0, "Select Session", g:PathToSessions, "LastSession.vim")
-			if g:SessionFileName != ""
-				exe "source " . g:SessionFileName
-			endif
-		else
-			" For non-gui vim
-			let LoadLastSession = confirm("Restore last session?", "&Yes\n&No")
-			if LoadLastSession == 1
-				exe "source " . g:PathToSessions . "LastSession.vim"
-			endif
-		endif
-	endif
+    if argc() == 0
+        " gvim started with no files
+        if has("browse") == 1
+            let g:SessionFileName = browse(0, "Select Session", g:PathToSessions, "LastSession.vim")
+            if g:SessionFileName != ""
+                exe "source " . g:SessionFileName
+            endif
+        else
+            " For non-gui vim
+            let LoadLastSession = confirm("Restore last session?", "&Yes\n&No")
+            if LoadLastSession == 1
+                exe "source " . g:PathToSessions . "LastSession.vim"
+            endif
+        endif
+    endif
 endfunction
 function! TTr_SessionSave()
    exe "mksession! " . g:PathToSessions . "LastSession.vim"
@@ -561,13 +566,161 @@ vnoremap <F7> :call TTrCodeAssistor_ToggleComments()<CR>
 
 "}}}1
 "=============================================================================
+" Python {{{1
+" Load py funcitons" {{{2
+if has('python')
+    exec "pyfile ".$VIM."/_pyide.py"
+endif "}}}2
+
+function! Py_CompleteAttributes() "{{{2
+    let ModulePath = matchstr(getline("."),'\m[0-9A-Za-z.]*\ze\.\w*$')
+	let partName = matchstr(getline("."),'\m[0-9A-Za-z.]*\.\zs\w*$')
+    redir => AttrNameStr | silent exec "py print getAttributesByName('". ModulePath ."','" . partName . "')" | redir END
+
+    let AttrNameStr = AttrNameStr[1:]
+    let AttrNameList = split(AttrNameStr,',')
+
+    if len(AttrNameList) == 0 
+        return ""
+    endif
+
+    let AttrNameListDict = []
+    for item in AttrNameList
+        let AttrName = matchstr( item , '\m\zs.*\ze!.*' )
+        let AttrType = matchstr( item , '\m.*!\zs.*\ze' )
+        call add( AttrNameListDict , {'word': AttrName , 'menu':AttrType })
+    endfor
+
+    call complete(col('.') - strlen(partName) , AttrNameListDict)
+
+    return ""
+endfunction "}}}2
+
+if !exists("autoload_python") "{{{2
+    let autoload_python = 1
+    augroup PYTHON
+        au!
+        autocmd FileType PYTHON set expandtab shiftwidth=4
+        autocmd QuickFixCmdPre * copen
+        autocmd FileType PYTHON set makeprg=python\ %
+        autocmd FileType PYTHON inoremap <C-ENTER> <C-R>=Py_CompleteAttributes()<CR>
+    augroup END
+endif "}}}2
+
+" }}}1
+"=============================================================================
+" Doxygen {{{1
+
+" DgFileHeader {{{2
+function! DgExpandFileHeader() "{{{ 2
+	let DgFileHeader = [ 
+				\' *  \brief    -->add brief <--',
+				\' *  \author   winterTTr',
+				\' *  \version  $Revision$',
+				\' *  \date     $Date$' , 
+				\' *  \bug      --> add bug list <--',
+				\' *',
+				\' *  --> add detail msg here --<',
+				\' */']
+	let fileName = expand('%:t')
+	call insert( DgFileHeader , '/*! \file     '.fileName , 0 )
+	call append( 0 , DgFileHeader )
+endfunction "}}}2
+command! -nargs=0 DgFile call DgExpandFileHeader()
+
+function! DgExpandFunctionHeader() "{{{2
+    let curLineNumber = line('.')
+    let curLineContent = getline('.')
+
+    let doxygenContent = []
+
+    " add \fn
+    let functionDeclaration = substitute(curLineContent ,';','','g')
+    call add( doxygenContent , '/*! \fn       ' . functionDeclaration)
+    
+    let paramStr = matchstr( functionDeclaration , '\m(\zs[^)]*\ze)' )
+    let eachPartList = split( paramStr , ',' )
+
+
+    " analyze each param name 
+    let paramNameList = []
+    if 1 == len(eachPartList) && 0 == len( substitute( eachPartList[0] , ' ','' , 'g') )
+        let paramNameList = []
+    else
+        for eachItem in eachPartList
+            call add( paramNameList , matchstr( eachItem , '\m\zs\w\+\ze\ *$') )
+        endfor
+    endif
+
+
+    " add \param
+    if 0 != len(paramNameList )
+        for eachItem in paramNameList
+            call add( doxygenContent , ' *  \param[in,out]   ' . eachItem . '    --> add comment <--')
+        endfor
+    endif
+
+    " add \return and detail message
+    call add ( doxygenContent , ' *  \return   --> add comment <--')
+    call add ( doxygenContent , ' *')
+    call add ( doxygenContent , ' *  --> add detail msg <--')
+    call add ( doxygenContent , ' */')
+
+
+    call append( curLineNumber - 1 , doxygenContent )
+endfunction "}}}2
+command! -nargs=0 DgFunction call DgExpandFunctionHeader()
+
+function! DgExpandClassHeader( type ) "{{{2
+    let doxygenContent = []
+    let curLineContent = getline('.')
+    let curLineNumber = line('.')
+
+    "get Class name
+    let className = matchstr(curLineContent , a:type . '\ \+\zs\w\+\ze')
+    if 0 == len(className)
+        echohl WarningMsg | echo "Can't find Class identifier in current line ." | echohl None
+        return
+    endif
+
+    call add(doxygenContent , '/*! \'.a:type. repeat( ' ' , 9 - len(a:type) ) . className)
+
+    call add(doxygenContent , ' *  \brief    --> add brief <--')
+    call add(doxygenContent , ' *')
+    call add(doxygenContent , ' *  --> add detail msg <--')
+    call add(doxygenContent , ' */')
+
+    call append(curLineNumber-1 , doxygenContent)
+endfunction "}}}2
+command! -nargs=0 DgClass    call DgExpandClassHeader('class')
+command! -nargs=0 DgStruct    call DgExpandClassHeader('struct')
+
+function! DgExpandDefineHeader() "{{{2
+    let doxygenContent = []
+    let curLineNum = line('.')
+    let curLineContent = getline('.')
+
+    let defName = matchstr( curLineContent , '\m#define\W\+\zs\w\+\ze' )
+    
+    call add(doxygenContent , '/*! \def      ' . defName)
+    call add(doxygenContent , ' *  --> about define <---')
+    call add(doxygenContent , ' */')
+
+    call append(curLineNum -1 , doxygenContent)
+endfunction "}}}2
+command! -nargs=0 DgDefine  call DgExpandDefineHeader()
+
+command! -nargs=0 DgMember  execute "normal A\<tab>\<tab>/*!<   */\<left>\<left>\<left>" | startinsert
+
+" }}}1
+"=============================================================================
 " Latex Setting {{{1
 if has("win32")
-	set shellslash
+    set shellslash
 endif
 augroup LatexSuite
-	autocmd!
-	autocmd FileType TEX :set sw=2 iskeyword+=:
+    autocmd!
+    autocmd FileType TEX :set sw=2 iskeyword+=:
 augroup end
 filetype indent on
 set grepprg=grep\ -nH\ $*
