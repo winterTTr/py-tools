@@ -1,7 +1,7 @@
 "   Filename: .vimrc
-"   Author:   winterTTr
-"   Mail:     winterTTr@gmail.com
-"   svnid:  $Id$
+"   Author: winterTTr
+"   Mail: winterTTr@gmail.com
+"   Version: $Id$
 
 "=============================================================================
 " Encoding and lang options {{{1
@@ -573,25 +573,27 @@ if has('python')
 endif "}}}2
 
 function! Py_CompleteAttributes() "{{{2
-    let ModulePath = matchstr(getline("."),'\m[0-9A-Za-z.]*\ze\.\w*$')
-	let partName = matchstr(getline("."),'\m[0-9A-Za-z.]*\.\zs\w*$')
-    redir => AttrNameStr | silent exec "py print getAttributesByName('". ModulePath ."','" . partName . "')" | redir END
+    "let ModulePath = matchstr(getline(".")[:col('.')],'\m[0-9A-Za-z.]*\.\w*$')
+	"let partName = matchstr(getline("."),'\m[0-9A-Za-z.]*\.\zs\w*\ze.*$')
+    redir => AttrNameStr | silent exec "py print getAttributesByName()" | redir END
 
     let AttrNameStr = AttrNameStr[1:]
     let AttrNameList = split(AttrNameStr,',')
 
-    if len(AttrNameList) == 0 
+    if len(AttrNameList) == 1 || len(AttrNameList) == 0 
         return ""
     endif
 
+    let offset = AttrNameList[0] + 0
+
     let AttrNameListDict = []
-    for item in AttrNameList
+    for item in AttrNameList[1:]
         let AttrName = matchstr( item , '\m\zs.*\ze!.*' )
         let AttrType = matchstr( item , '\m.*!\zs.*\ze' )
         call add( AttrNameListDict , {'word': AttrName , 'menu':AttrType })
     endfor
 
-    call complete(col('.') - strlen(partName) , AttrNameListDict)
+    call complete(col('.') - offset , AttrNameListDict)
 
     return ""
 endfunction "}}}2
