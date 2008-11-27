@@ -68,44 +68,56 @@ vim.command( 'nmap <F5> :py RunCurrentFile()<CR>')
 
 # Auto complete {{{1
 
-def getAttributesByName(ModulePath, partName): #{{{2
-    if not needToStartMaigc():
-        return ""
-
-    if len(ModulePath) == 0 :
-        return ""
-
-    # split the ModulePath to ModuleName and MemberPath , ex : os.path
-    # ==> 'os' & '.path'
-    findResult = re.match('(\w+)(.*)',ModulePath)
-    ModuleName = findResult.group(1)
-    MemberPath = findResult.group(2)
-
-    # import Module as objModule
-    try:
-        objModule = __import__(ModuleName)
-        strMemeberList = eval('dir(objModule' + MemberPath + ')')
-    except:
-        return ""
-
-    # Construct the reObj as Search pattern
-    reObj = re.compile('<.*\'(.*)\'>')
-    reIfMatch = re.compile( '^' + partName )
-
-    # Make the result
-    MemberList = []
-    for MemberName in strMemeberList:
-        TypeStr = eval( 'type(objModule ' + MemberPath + '.' + MemberName + ')' )
-        if len(partName) == 0 or ( len(partName) != 0 and reIfMatch.match( MemberName ) ):
-            MemberList.append( MemberName + '!' + reObj.match(str(TypeStr)).group(1) )
-
-    return string.join(MemberList,',')
-#}}}2
-
-
 vim_cmd_dict = {}
 vim_cmd_dict['closeShowMode'] = 'setlocal noshowmode'
 vim_cmd_dict['echoWarning_f'] = 'echohl WarningMsg | echomsg "%s" | echohl None'
+
+def getAttributesByName(): #{{{2
+    if not needToStartMaigc():
+        return ""
+
+    # process the current line
+    curLine = vim.current.line
+    curLineNo , curRowNo = vim.current.window.cursor
+
+    textBeforeCursor = curLine[:curRowNo]
+    fullpath = re.search( '[A-Za-z._]*$' , textBeforeCursor ).group()
+    if len( fullpath ) == 0 or fullpath.find('.') == -1 :
+        return ""
+
+    # get Module path , ex : os.path.cu ==> os| path | cu
+    moduleParts = fullpath.split('.')
+
+    # import Module as objModule
+    try:
+        objModule = __import__(moduleParts[0])
+    except:
+        return ""
+
+    for comp in moduleParts[1:-1]:
+        objModule = getattr( objModule , comp)
+
+    # Construct the reObj as Search pattern
+    reIfMatch = None
+    if len(moduleParts) ==  1:
+        matchFlag = False
+    else:
+        matchFlag = True
+        reIfMatch = re.compile( '^' + moduleParts[-1] )
+
+    # Make the result
+    MemberList = [str(len(moduleParts[-1]))]
+    for MemberName in dir(objModule):
+        try :
+            type_name = getattr( objModule , MemberName ).__class__.__name__
+        except AttributeError :
+            type_name = 'unknown'
+
+        if ( not matchFlag ) or ( matchFlag and reIfMatch.match( MemberName ) ):
+            MemberList.append( MemberName + '!' + type_name )
+
+    return string.join(MemberList,',')
+#}}}2
 
 def needToStartMaigc(): # {{{2
     """
@@ -125,7 +137,7 @@ def needToStartMaigc(): # {{{2
     # check if it is a empty line
     stripLine = curLine.strip()
     if len(stripLine) == 0:
-        return None
+        return False
 
     # Check if it is in line begin with[#]
     if stripLine[0] == '#':
