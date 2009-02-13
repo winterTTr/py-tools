@@ -604,8 +604,12 @@ if !exists("autoload_python") "{{{2
         au!
         autocmd FileType PYTHON set expandtab shiftwidth=4
         autocmd QuickFixCmdPre * copen
-        autocmd FileType PYTHON set makeprg=python\ %
         autocmd FileType PYTHON inoremap <C-ENTER> <C-R>=Py_CompleteAttributes()<CR>
+
+	   "Set some bindings up for 'compile' of python
+	   autocmd FileType python set makeprg=python\ -c\ \"import\ py_compile,sys;\ sys.stderr=sys.stdout;\ py_compile.compile(r'%')\"
+	   autocmd FileType python set efm=%C\ %.%#,%A\ \ File\ \"%f\"\\,\ line\ %l%.%#,%Z%[%^\ ]%\\@=%m
+
     augroup END
 endif "}}}2
 
