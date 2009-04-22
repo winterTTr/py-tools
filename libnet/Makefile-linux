@@ -1,0 +1,15 @@
+GCC_LIB=-lnet -lpcap
+GCC_INCLUDE=-I/opt/python25/include/python2.5 -I/opt/libnet/include
+GCC_DEFINE=-DLINUX
+
+all:pktUtil.so
+
+pktUtil.so: pktUtil.o
+	g++ -shared pktUtil.o $(GCC_LIB) -o pktUtil.so
+
+pktUtil.o:pktUtil.cpp
+	g++ -c pktUtil.cpp $(GCC_DEFINE) $(GCC_INCLUDE) -o pktUtil.o
+
+
+clean:
+	rm -f pktUtil.o pktUtil.so

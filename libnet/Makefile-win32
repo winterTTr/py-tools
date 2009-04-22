@@ -1,0 +1,15 @@
+GCC_LIB=-LC:\Python25\libs -lpython25 -L.\pcap\Lib -lwpcap -L.\libnet\lib -llibnet -lwsock32
+GCC_INCLUDE=-IC:\Python25\include -I.\pcap\Include -I.\libnet\include
+GCC_DEFINE=-DWIN32
+
+all:pktUtil.pyd
+
+pktUtil.pyd: pktUtil.o
+	g++ -shared pktUtil.o $(GCC_LIB) -o pktUtil.pyd
+
+pktUtil.o:pktUtil.cpp
+	g++ -c pktUtil.cpp $(GCC_DEFINE) $(GCC_INCLUDE) -o pktUtil.o
+
+
+clean:
+	del pktUtil.o pktUtil.pyd
