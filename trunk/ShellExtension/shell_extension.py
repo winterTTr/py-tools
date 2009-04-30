@@ -20,41 +20,57 @@ class ShellExtension:
     _reg_progid_ = "Python.ShellExtension.winterTTr"
     _reg_desc_ = "Python extension from winterTTr"
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
-    _com_interfaces_ = [shell.IID_IShellExtInit, shell.IID_IContextMenu , "{0000010b-0000-0000-C000-000000000046}"]
-    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + ['IsDirty','Save','Load','SaveCompleted','GetCurFile']
+    _com_interfaces_ = [ 
+            shell.IID_IShellExtInit, 
+            shell.IID_IContextMenu ]
+            #"{0000010b-0000-0000-C000-000000000046}",
+            #"{00021500-0000-0000-C000-000000000046}"]
+    #_public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + ['IsDirty','Save','Load','SaveCompleted','GetCurFile','GetInfoFlags','GetInfoTip']
+    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods 
 
-    def IsDirty():
-        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-
-    def Load(pszFileName, dwMode):
-        print pszFileName
-
-    def Save(pszFileName, fRemember):
-        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-
-    def SaveCompleted(pszFileName):
-        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-
-    def GetCurFile():
-        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+#    def GetInfoFlags():
+#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+#
+#    def GetInfoTip(dwFlags):
+#        print "########################GetInfoTip##############################"
+#        print dwFlags
+#
+#    def IsDirty():
+#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+#
+#    def Load(pszFileName, dwMode):
+#        print "########################Load##############################"
+#        print pszFileName
+#
+#    def Save(pszFileName, fRemember):
+#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+#
+#    def SaveCompleted(pszFileName):
+#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+#
+#    def GetCurFile():
+#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
 
     def Initialize(self, folder, dataobj, hkey):
-        print "Init", folder, dataobj, hkey
+        print "======================Init==================="
+        print folder, dataobj, hkey
+        print "============================================="
         self.dataobj = dataobj
 
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
-        print "QCM", hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
+        print "======================QCM ==================="
+        print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
+        print "============================================="
         # Query the items clicked on
         format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
         sm = self.dataobj.GetData(format_etc)
         num_files = shell.DragQueryFile(sm.data_handle, -1)
         if num_files > 1:
-            msg = "&Hello from Python (with %d files selected)" % num_files
+            msg = "(with %d files selected)" % num_files
         else:
             fname = shell.DragQueryFile(sm.data_handle, 0)
-            msg = "&Hello from Python (with '%s' selected)" % fname
+            msg = "(with '%s' selected)" % fname
 
-        print "index Menu:%d , idCmdFirst:%d , idCmdLast:%d" % ( indexMenu , idCmdFirst , idCmdLast )
         idCmd = idCmdFirst
         items = []
         if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
@@ -70,16 +86,37 @@ class ShellExtension:
             print "CMF_DEFAULTONLY...\r\n"
         else:
             print "** unknown flags", uFlags
+
+        ## Insert Separator
         win32gui.InsertMenu(hMenu, indexMenu,
                             win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
                             0, None)
         indexMenu += 1
+
+
+        # add for test
+        root_menu = win32gui.CreatePopupMenu()
+        win32gui.InsertMenu(hMenu, indexMenu,
+                win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
+                root_menu, "ROOT MENU")
+        indexMenu += 1
+
+        sub_index = 0 
         for item in items:
-            win32gui.InsertMenu(hMenu, indexMenu,
+            win32gui.InsertMenu(root_menu, sub_index,
                                 win32con.MF_STRING|win32con.MF_BYPOSITION,
                                 idCmd, item)
-            indexMenu += 1
+            sub_index += 1
             idCmd += 1
+        ## end ###
+
+        #indexMenu += 1
+        #for item in items:
+        #    win32gui.InsertMenu(hMenu, indexMenu,
+        #                        win32con.MF_STRING|win32con.MF_BYPOSITION,
+        #                        idCmd, item)
+        #    indexMenu += 1
+        #    idCmd += 1
 
         win32gui.InsertMenu(hMenu, indexMenu,
                             win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
