@@ -14,12 +14,15 @@ from win32com.shell import shell, shellcon
 import win32gui
 import win32con
 import os
+from xml.etree import cElementTree as ET
+import subprocess
+
 #import winerror
 #from win32com.server.exception import COMException
 
 class ShellExtension:
     _reg_progid_ = "Python.ShellExtension.winterTTr"
-    _reg_desc_ = "Python extension from winterTTr"
+    _reg_desc_ = "Python Shell Extension from winterTTr"
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
@@ -58,6 +61,52 @@ class ShellExtension:
         print "============================================="
         self.dataobj = dataobj
         self.selection_list = []
+        self.et = ET.ElementTree( file='config.xml' )
+        self.condition_dict = {}
+        self.menu_item = []
+
+    def GetValidMenuItem( self , name_list ):
+        # make target type
+        self.condition_dict['num']= len( name_list )
+        self.condition_dict['type']= []
+
+        tag_file = False
+        tag_dir = False
+        for x in name_list :
+            if os.path.isdir( x ):
+                tag_dir = True
+            else:
+                tag_file = True
+
+            if tag_file and tag_dir:
+                break
+
+        if tag_file:
+            self.condition_dict['type'].append('file')
+        if tag_dir:
+            self.condition_dict['type'].append('dir')
+
+
+        # get valid item
+        self.menu_item = filter( self.CheckItem , self.et.findall('item') )
+
+    def CheckItem( self , item ):
+        target_conf = item.find('target')
+        tc_num = int( target_conf.find('num').text )
+        tc_type = target_conf.find('type').text.split(',')
+
+        # check num
+        if tc_num != -1 and ( self.condition_dict['num'] != tc_num ):
+            return False
+
+        # check type
+        for x in self.condition_dict['type']:
+            if not ( x in tc_type ):
+                return False
+
+        return True
+        
+
 
 
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
@@ -76,7 +125,6 @@ class ShellExtension:
         for index in xrange(num_files):
             fname = shell.DragQueryFile( sm.data_handle , index )
             self.selection_list.append( fname )
-            print fname
 
         if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
             print "CMF_NORMAL..."
@@ -90,6 +138,11 @@ class ShellExtension:
         else:                                        # something wrong maybe
             print "** unknown flags", uFlags
 
+
+        self.GetValidMenuItem( self.selection_list )
+        if len( self.menu_item ) == 0:
+            return 0
+
         ## insert a separator
         win32gui.InsertMenu(
                 hMenu, 
@@ -100,39 +153,40 @@ class ShellExtension:
         indexMenu += 1
 
 
-        ## add sub menu
-        #root_menu = win32gui.CreatePopupMenu()
-        #win32gui.InsertMenu(
-        #        hMenu, 
-        #        indexMenu,
-        #        win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
-        #        root_menu, 
-        #        u"看！我偷偷加了一个菜单")
-        #indexMenu += 1
+        # add sub menu
+        root_menu = win32gui.CreatePopupMenu()
+        win32gui.InsertMenu(
+                hMenu, 
+                indexMenu,
+                win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
+                root_menu, 
+                u"Py&ShellExtension")
+        indexMenu += 1
 
-        # add items to sub menu
-        #sub_index = 0 
-        #idCmd = idCmdFirst
-        #for item in self.selection_list:
-        #    win32gui.InsertMenu(
-        #            root_menu, 
-        #            sub_index,
-        #            win32con.MF_STRING|win32con.MF_BYPOSITION,
-        #            idCmd, 
-        #            item)
-        #    sub_index += 1
-        #    idCmd += 1
+        ## add items to sub menu
+        sub_index = 0 
+        idCmd = idCmdFirst
+        for item in self.menu_item:
+            menu_name = item.find('menu').text
+            win32gui.InsertMenu(
+                    root_menu, 
+                    sub_index,
+                    win32con.MF_STRING|win32con.MF_BYPOSITION,
+                    idCmd, 
+                    menu_name)
+            sub_index += 1
+            idCmd += 1
 
-        if len(self.selection_list) == 1 :
-            path , filename = os.path.split( self.selection_list[0] )
-            if filename.startswith(u"爱我么".encode('cp936')):
-                win32gui.InsertMenu(
-                        hMenu, 
-                        indexMenu,
-                        win32con.MF_STRING|win32con.MF_BYPOSITION ,
-                        idCmdFirst, 
-                        u"==看！我偷偷加了一个菜单==")
-                indexMenu += 1
+        #if len(self.selection_list) == 1 :
+        #    path , filename = os.path.split( self.selection_list[0] )
+        #    if filename.startswith(u"爱我么".encode('cp936')):
+        #        win32gui.InsertMenu(
+        #                hMenu, 
+        #                indexMenu,
+        #                win32con.MF_STRING|win32con.MF_BYPOSITION ,
+        #                idCmdFirst, 
+        #                u"==看！我偷偷加了一个菜单==")
+        #        indexMenu += 1
 
 
         # add one separator
@@ -144,12 +198,19 @@ class ShellExtension:
                 None)
         indexMenu += 1
 
-        #return idCmd-idCmdFirst # Must return number of menu items we added.
-        return 1
+        return idCmd-idCmdFirst # Must return number of menu items we added.
 
     def InvokeCommand(self, ci):
         mask, hwnd, verb, params, dir, nShow, hotkey, hicon = ci
-        win32gui.MessageBox(hwnd, u"这还用问，当然爱悦悦啦，么么么", u"啦啦啦", win32con.MB_OK)
+        #win32gui.MessageBox(hwnd, u"x", u"xx", win32con.MB_OK)
+
+        cmd_exec = self.menu_item[verb].find('command/exec').text
+        
+        # make path
+        path = subprocess.list2cmdline( self.selection_list )
+        subprocess.Popen( cmd_exec % path )
+
+        
 
     def GetCommandString(self, cmd, typ):
         return "Windows Shell Extesion From winterTTr"

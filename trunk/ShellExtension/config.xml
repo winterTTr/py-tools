@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<config>
+	<item>
+		<menu>&amp;cmd here...</menu>
+		<target>
+			<num>1</num>
+			<type>dir</type>
+		</target>
+		<command>
+            <exec>cmd.exe /K "cd /d %s"</exec>
+		</command>
+	</item>
+	<item>
+		<menu>open with &amp;gvim...</menu>
+		<target>
+			<num>-1</num>
+			<type>file,dir</type>
+		</target>
+		<command>
+			<exec>E:\Tools\Vim\vim70\gvim.exe --remote-tab-silent %s</exec>
+		</command>
+	</item>
+</config>
