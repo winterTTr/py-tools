@@ -16,9 +16,16 @@ import win32con
 import os
 from xml.etree import cElementTree as ET
 import subprocess
+import winerror
+from win32com.server.exception import COMException
+from pywintypes import IID
 
-#import winerror
-#from win32com.server.exception import COMException
+
+IPersistFile_Methods = "IsDirty Load Save SaveCompleted GetCurFile".split()
+
+IID_IQueryInfo = "{00021500-0000-0000-C000-000000000046}"
+IQueryInfo_Methods = ["GetInfoFlags","GetInfoTip"]
+
 
 class ShellExtension:
     _reg_progid_ = "Python.ShellExtension.winterTTr"
@@ -26,34 +33,47 @@ class ShellExtension:
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
-            shell.IID_IContextMenu ]
-            #"{0000010b-0000-0000-C000-000000000046}",
-            #"{00021500-0000-0000-C000-000000000046}"]
-    #_public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + ['IsDirty','Save','Load','SaveCompleted','GetCurFile','GetInfoFlags','GetInfoTip']
-    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods 
+            shell.IID_IContextMenu ,
+            pythoncom.IID_IPersistFile,
+            IID(IID_IQueryInfo)]
+    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods + IQueryInfo_Methods
 
-#    def GetInfoFlags():
-#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-#
-#    def GetInfoTip(dwFlags):
-#        print "########################GetInfoTip##############################"
-#        print dwFlags
-#
-#    def IsDirty():
-#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-#
-#    def Load(pszFileName, dwMode):
-#        print "########################Load##############################"
-#        print pszFileName
-#
-#    def Save(pszFileName, fRemember):
-#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-#
-#    def SaveCompleted(pszFileName):
-#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-#
-#    def GetCurFile():
-#        raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+# =============== IPersistFile : from ======================
+    def GetInfoFlags(self , Flags ):
+        #raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
+        raise COMException(hresult=winerror.E_NOTIMPL)
+
+    def GetInfoTip(self , flags ):
+        print flags  
+        print "======== GetInfoTip ==========="
+        return ""
+
+# =============== IPersistFile : to ======================
+
+
+# =============== IPersistFile : from ======================
+    def IsDirty( self ):
+        raise COMException(hresult=winerror.E_NOTIMPL)
+
+    def Load(self, filename, mode):
+       #self.filename = filename
+       #self.mode = mode
+       print filename
+
+
+    def Save( self ,FileName, Remember):
+        raise COMException(hresult=winerror.E_NOTIMPL)
+
+    def SaveCompleted( self , pszFileName):
+        raise COMException(hresult=winerror.E_NOTIMPL)
+
+    def GetCurFile( self ):
+        raise COMException(hresult=winerror.E_NOTIMPL)
+
+# =============== IPersistFile : to  ======================
+
+
+# =============== IShellExtInit : from  ======================
 
     def Initialize(self, folder, dataobj, hkey):
         print "======================Init==================="
@@ -61,9 +81,27 @@ class ShellExtension:
         print "============================================="
         self.dataobj = dataobj
         self.selection_list = []
-        self.et = ET.ElementTree( file='config.xml' )
         self.condition_dict = {}
         self.menu_item = []
+
+        # save user selection
+        try:
+            format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
+            sm = self.dataobj.GetData(format_etc)
+        except pythoncom.com_error:
+            raise COMException(desc='GetData Error' , scode = winerror.E_INVALIDARG)
+
+        num_files = shell.DragQueryFile(sm.data_handle, -1)
+        for index in xrange(num_files):
+            fname = shell.DragQueryFile( sm.data_handle , index )
+            self.selection_list.append( fname )
+            print "==== select file : %s ======" % fname
+
+# =============== IShellExtInit : to  ======================
+
+
+
+# =============== IContextMenu : from  ======================
 
     def GetValidMenuItem( self , name_list ):
         # make target type
@@ -86,9 +124,8 @@ class ShellExtension:
         if tag_dir:
             self.condition_dict['type'].append('dir')
 
-
         # get valid item
-        self.menu_item = filter( self.CheckItem , self.et.findall('item') )
+        return filter( self.CheckItem , ET.ElementTree( file='config.xml' ).findall('item') )
 
     def CheckItem( self , item ):
         target_conf = item.find('target')
@@ -106,25 +143,10 @@ class ShellExtension:
 
         return True
         
-
-
-
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
         print "======================QCM ==================="
         print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
         print "============================================="
-
-        # save user selection
-        try:
-            format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
-            sm = self.dataobj.GetData(format_etc)
-        except pythoncom.com_error:
-            return 0
-
-        num_files = shell.DragQueryFile(sm.data_handle, -1)
-        for index in xrange(num_files):
-            fname = shell.DragQueryFile( sm.data_handle , index )
-            self.selection_list.append( fname )
 
         if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
             print "CMF_NORMAL..."
@@ -138,8 +160,7 @@ class ShellExtension:
         else:                                        # something wrong maybe
             print "** unknown flags", uFlags
 
-
-        self.GetValidMenuItem( self.selection_list )
+        self.menu_item = self.GetValidMenuItem( self.selection_list )
         if len( self.menu_item ) == 0:
             return 0
 
@@ -177,18 +198,6 @@ class ShellExtension:
             sub_index += 1
             idCmd += 1
 
-        #if len(self.selection_list) == 1 :
-        #    path , filename = os.path.split( self.selection_list[0] )
-        #    if filename.startswith(u"爱我么".encode('cp936')):
-        #        win32gui.InsertMenu(
-        #                hMenu, 
-        #                indexMenu,
-        #                win32con.MF_STRING|win32con.MF_BYPOSITION ,
-        #                idCmdFirst, 
-        #                u"==看！我偷偷加了一个菜单==")
-        #        indexMenu += 1
-
-
         # add one separator
         win32gui.InsertMenu(
                 hMenu, 
@@ -215,6 +224,8 @@ class ShellExtension:
     def GetCommandString(self, cmd, typ):
         return "Windows Shell Extesion From winterTTr"
 
+# =============== IContextMenu : to  ======================
+
 def DllRegisterServer():
     import _winreg
 
@@ -235,6 +246,14 @@ def DllRegisterServer():
     subkey2 = _winreg.CreateKey(subkey, "PyShellExtension")
     _winreg.SetValueEx(subkey2, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
     print ShellExtension._reg_desc_, "registration [folder] complete."
+
+    # add to txt type
+    key = _winreg.CreateKey(
+            _winreg.HKEY_CLASSES_ROOT,
+            ".txt\\shellex")
+    subkey = _winreg.CreateKey(key, IID_IQueryInfo)
+    _winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    print ShellExtension._reg_desc_, "registration [txt file] complete."
 
 def DllUnregisterServer():
     import _winreg
@@ -260,6 +279,17 @@ def DllUnregisterServer():
         if details.errno != errno.ENOENT:
             raise
     print ShellExtension._reg_desc_, "unregistration [Folder] complete."
+
+    # remove txt type
+    try:
+        key = _winreg.DeleteKey(
+                _winreg.HKEY_CLASSES_ROOT,
+                ".txt\\shellex\\%s" % IID_IQueryInfo )
+    except WindowsError, details:
+        import errno
+        if details.errno != errno.ENOENT:
+            raise
+    print ShellExtension._reg_desc_, "unregistration [txt file] complete."
 
 if __name__=='__main__':
     from win32com.server import register

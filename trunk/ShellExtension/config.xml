@@ -17,7 +17,7 @@
 			<type>file,dir</type>
 		</target>
 		<command>
-			<exec>E:\Tools\Vim\vim70\gvim.exe --remote-tab-silent %s</exec>
+			<exec>gvim.exe --remote-tab-silent %s</exec>
 		</command>
 	</item>
 </config>
