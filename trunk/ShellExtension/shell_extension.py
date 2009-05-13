@@ -58,7 +58,7 @@ class ShellExtension:
     def Load(self, filename, mode):
        #self.filename = filename
        #self.mode = mode
-       print filename
+       print "==[Load] filename : " , filename
 
 
     def Save( self ,FileName, Remember):
@@ -76,9 +76,6 @@ class ShellExtension:
 # =============== IShellExtInit : from  ======================
 
     def Initialize(self, folder, dataobj, hkey):
-        print "======================Init==================="
-        print folder, dataobj, hkey
-        print "============================================="
         self.dataobj = dataobj
         self.selection_list = []
         self.condition_dict = {}
@@ -95,7 +92,7 @@ class ShellExtension:
         for index in xrange(num_files):
             fname = shell.DragQueryFile( sm.data_handle , index )
             self.selection_list.append( fname )
-            print "==== select file : %s ======" % fname
+            print "====[Initialize] select file : %s ======" % fname
 
 # =============== IShellExtInit : to  ======================
 
@@ -110,17 +107,17 @@ class ShellExtension:
         self.condition_dict['type']= []
         
         if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
-            print "CMF_NORMAL..."
+            print "==[GetValidMenuItem] CMF_NORMAL..."
         elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
             self.condition_dict['type'].append('link')
-            print "CMF_VERBSONLY..."
+            print "==[GetValidMenuItem] CMF_VERBSONLY..."
         elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
-            print "CMF_EXPLORE..."
+            print "==[GetValidMenuItem] CMF_EXPLORE..."
         elif uFlags & CMF_DEFAULTONLY:               # should do nothing
-            print "CMF_DEFAULTONLY...\r\n"
+            print "==[GetValidMenuItem] CMF_DEFAULTONLY..."
             return []
         else:                                        # something wrong maybe
-            print "** unknown flags", uFlags
+            print "==[GetValidMenuItem] ** unknown flags", uFlags
             return []
 
 
@@ -142,7 +139,7 @@ class ShellExtension:
                 self.condition_dict['type'].append('dir')
 
 
-            print "Not Link , find dir type" , self.condition_dict['type']
+            print "==[GetValidMenuItem] No Link , type" , self.condition_dict['type']
 
         # get valid item
         config_file_path = os.path.join( os.path.split( __file__ )[0] , 'config.xml' )
@@ -269,10 +266,16 @@ def DllRegisterServer():
     # add to txt type
     key = _winreg.CreateKey(
             _winreg.HKEY_CLASSES_ROOT,
-            ".txt\\shellex")
+            "txtfile\\shellex")
     subkey = _winreg.CreateKey(key, IID_IQueryInfo)
     _winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
     print ShellExtension._reg_desc_, "registration [txt file] complete."
+
+    # register to approve
+    key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"  , 0 , _winreg.KEY_ALL_ACCESS )
+    _winreg.SetValueEx( key , ShellExtension._reg_clsid_ , 0 , _winreg.REG_SZ , ShellExtension._reg_progid_ )
+    print ShellExtension._reg_desc_, "Add to approve list"
+
 
 def DllUnregisterServer():
     import _winreg
@@ -303,12 +306,23 @@ def DllUnregisterServer():
     try:
         key = _winreg.DeleteKey(
                 _winreg.HKEY_CLASSES_ROOT,
-                ".txt\\shellex\\%s" % IID_IQueryInfo )
+                "txtfile\\shellex\\%s" % IID_IQueryInfo )
     except WindowsError, details:
         import errno
         if details.errno != errno.ENOENT:
             raise
     print ShellExtension._reg_desc_, "unregistration [txt file] complete."
+
+
+    # remove approve
+    try:
+        key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved" , 0 , _winreg.KEY_ALL_ACCESS)
+        _winreg.DeleteValue( key , ShellExtension._reg_clsid_ )
+    except WindowsError, details:
+        import errno
+        if details.errno != errno.ENOENT:
+            raise
+    print ShellExtension._reg_desc_, "Remove Approve list complete."
 
 if __name__=='__main__':
     from win32com.server import register
