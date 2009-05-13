@@ -103,34 +103,58 @@ class ShellExtension:
 
 # =============== IContextMenu : from  ======================
 
-    def GetValidMenuItem( self , name_list ):
+    def GetValidMenuItem( self , name_list , uFlags):
+        
         # make target type
         self.condition_dict['num']= len( name_list )
         self.condition_dict['type']= []
+        
+        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
+            print "CMF_NORMAL..."
+        elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
+            self.condition_dict['type'].append('link')
+            print "CMF_VERBSONLY..."
+        elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
+            print "CMF_EXPLORE..."
+        elif uFlags & CMF_DEFAULTONLY:               # should do nothing
+            print "CMF_DEFAULTONLY...\r\n"
+            return []
+        else:                                        # something wrong maybe
+            print "** unknown flags", uFlags
+            return []
 
-        tag_file = False
-        tag_dir = False
-        for x in name_list :
-            if os.path.isdir( x ):
-                tag_dir = True
-            else:
-                tag_file = True
 
-            if tag_file and tag_dir:
-                break
+        if len( self.condition_dict['type'] ) == 0:
+            tag_file = False
+            tag_dir = False
+            for x in name_list :
+                if os.path.isdir( x ):
+                    tag_dir = True
+                else:
+                    tag_file = True
 
-        if tag_file:
-            self.condition_dict['type'].append('file')
-        if tag_dir:
-            self.condition_dict['type'].append('dir')
+                if tag_file and tag_dir:
+                    break
+
+            if tag_file:
+                self.condition_dict['type'].append('file')
+            if tag_dir:
+                self.condition_dict['type'].append('dir')
+
+
+            print "Not Link , find dir type" , self.condition_dict['type']
 
         # get valid item
-        return filter( self.CheckItem , ET.ElementTree( file='config.xml' ).findall('item') )
+        config_file_path = os.path.join( os.path.split( __file__ )[0] , 'config.xml' )
+        print "==[GetValidMenuItem] %s" % config_file_path
+        return filter( self.CheckItem , ET.ElementTree( file= config_file_path ).findall('item') )
 
     def CheckItem( self , item ):
         target_conf = item.find('target')
         tc_num = int( target_conf.find('num').text )
         tc_type = target_conf.find('type').text.split(',')
+
+        print "==[CheckItem] : tc_num " , tc_num , "| tc_type :" , tc_type
 
         # check num
         if tc_num != -1 and ( self.condition_dict['num'] != tc_num ):
@@ -148,20 +172,10 @@ class ShellExtension:
         print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
         print "============================================="
 
-        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
-            print "CMF_NORMAL..."
-        elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
-            print "CMF_VERBSONLY..."
-        elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
-            print "CMF_EXPLORE..."
-        elif uFlags & CMF_DEFAULTONLY:               # should do nothing
-            print "CMF_DEFAULTONLY...\r\n"
-            return 0
-        else:                                        # something wrong maybe
-            print "** unknown flags", uFlags
 
-        self.menu_item = self.GetValidMenuItem( self.selection_list )
+        self.menu_item = self.GetValidMenuItem( self.selection_list , uFlags )
         if len( self.menu_item ) == 0:
+            print "==[QueryContextMenu] No Menu find"
             return 0
 
         ## insert a separator
@@ -217,7 +231,12 @@ class ShellExtension:
         
         # make path
         path = subprocess.list2cmdline( self.selection_list )
-        subprocess.Popen( cmd_exec % path )
+        print "==[InvokeCommand] path = %s" % path
+        try:
+            full_command_exec = cmd_exec % path 
+        except:
+            full_command_exec = cmd_exec
+        subprocess.Popen( full_command_exec )
 
         
 
