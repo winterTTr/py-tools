@@ -20,4 +20,14 @@
 			<exec>gvim.exe --remote-tab-silent %s</exec>
 		</command>
 	</item>
+	<item>
+		<menu>Open Target Dir...</menu>
+		<target>
+			<num>1</num>
+			<type>link</type>
+		</target>
+		<command>
+			<exec>explorer /e,/select,%s</exec>
+		</command>
+	</item>
 </config>
