@@ -19,12 +19,13 @@ import subprocess
 import winerror
 from win32com.server.exception import COMException
 from pywintypes import IID
+import ctypes
 
 
 IPersistFile_Methods = "IsDirty Load Save SaveCompleted GetCurFile".split()
 
-IID_IQueryInfo = "{00021500-0000-0000-C000-000000000046}"
-IQueryInfo_Methods = ["GetInfoFlags","GetInfoTip"]
+#IID_IQueryInfo = "{00021500-0000-0000-C000-000000000046}"
+#IQueryInfo_Methods = ["GetInfoFlags","GetInfoTip"]
 
 
 class ShellExtension:
@@ -34,26 +35,32 @@ class ShellExtension:
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
             shell.IID_IContextMenu ,
-            pythoncom.IID_IPersistFile,
-            IID(IID_IQueryInfo)]
-    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods + IQueryInfo_Methods
+            pythoncom.IID_IPersistFile]
+            #'IQueryInfo'
+            #]
+    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods #+ IQueryInfo_Methods
 
-# =============== IPersistFile : from ======================
-    def GetInfoFlags(self , Flags ):
-        #raise COMException(desc="No Implemented",scode=winerror.E_NOTIMPL)
-        raise COMException(hresult=winerror.E_NOTIMPL)
+    #_typelib_guid_ = '{41059C57-975F-4B36-8FF3-C5117426647A}'
+    #_typelib_version_ = 1, 0
 
-    def GetInfoTip(self , flags ):
-        print flags  
-        print "======== GetInfoTip ==========="
-        return ""
+# =============== IQeuryInfo : from ======================
+    def GetInfoFlags(self):
+        print "==[GetInfoFlags] return 0 to default"
+        return 0
+        raise COMException(scode = winerror.E_NOTIMPL)
 
-# =============== IPersistFile : to ======================
+
+    def GetInfoTip( self , flags ):
+        raise COMException(scode = winerror.E_NOTIMPL)
+        print "==[GetInfoTip] flags : " , flags
+        return "abc"
+
+# =============== IQeuryInfo : to ======================
 
 
 # =============== IPersistFile : from ======================
     def IsDirty( self ):
-        raise COMException(hresult=winerror.E_NOTIMPL)
+        raise COMException(scode = winerror.E_NOTIMPL)
 
     def Load(self, filename, mode):
        #self.filename = filename
@@ -62,13 +69,13 @@ class ShellExtension:
 
 
     def Save( self ,FileName, Remember):
-        raise COMException(hresult=winerror.E_NOTIMPL)
+        raise COMException(scode = winerror.E_NOTIMPL)
 
     def SaveCompleted( self , pszFileName):
-        raise COMException(hresult=winerror.E_NOTIMPL)
+        raise COMException(scode = winerror.E_NOTIMPL)
 
     def GetCurFile( self ):
-        raise COMException(hresult=winerror.E_NOTIMPL)
+        raise COMException(scode = winerror.E_NOTIMPL)
 
 # =============== IPersistFile : to  ======================
 
@@ -264,17 +271,22 @@ def DllRegisterServer():
     print ShellExtension._reg_desc_, "registration [folder] complete."
 
     # add to txt type
-    key = _winreg.CreateKey(
-            _winreg.HKEY_CLASSES_ROOT,
-            "txtfile\\shellex")
-    subkey = _winreg.CreateKey(key, IID_IQueryInfo)
-    _winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
-    print ShellExtension._reg_desc_, "registration [txt file] complete."
+    #key = _winreg.CreateKey(
+    #        _winreg.HKEY_CLASSES_ROOT,
+    #        "txtfile\\shellex")
+    #subkey = _winreg.CreateKey(key, IID_IQueryInfo)
+    #_winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    #print ShellExtension._reg_desc_, "registration [txt file] complete."
 
     # register to approve
     key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"  , 0 , _winreg.KEY_ALL_ACCESS )
     _winreg.SetValueEx( key , ShellExtension._reg_clsid_ , 0 , _winreg.REG_SZ , ShellExtension._reg_progid_ )
     print ShellExtension._reg_desc_, "Add to approve list"
+
+    #this_dir = os.path.dirname(__file__)
+    #tlb = os.path.abspath(os.path.join(this_dir, "shell_extension.tlb"))
+    #tli=pythoncom.LoadTypeLib(tlb)
+    #pythoncom.RegisterTypeLib(tli,tlb)
 
 
 def DllUnregisterServer():
@@ -303,15 +315,15 @@ def DllUnregisterServer():
     print ShellExtension._reg_desc_, "unregistration [Folder] complete."
 
     # remove txt type
-    try:
-        key = _winreg.DeleteKey(
-                _winreg.HKEY_CLASSES_ROOT,
-                "txtfile\\shellex\\%s" % IID_IQueryInfo )
-    except WindowsError, details:
-        import errno
-        if details.errno != errno.ENOENT:
-            raise
-    print ShellExtension._reg_desc_, "unregistration [txt file] complete."
+    #try:
+    #    key = _winreg.DeleteKey(
+    #            _winreg.HKEY_CLASSES_ROOT,
+    #            "txtfile\\shellex\\%s" % IID_IQueryInfo )
+    #except WindowsError, details:
+    #    import errno
+    #    if details.errno != errno.ENOENT:
+    #        raise
+    #print ShellExtension._reg_desc_, "unregistration [txt file] complete."
 
 
     # remove approve
