@@ -29,16 +29,23 @@ IPersistFile_Methods = "IsDirty Load Save SaveCompleted GetCurFile".split()
 
 
 class ShellExtension:
+    _register_tag_ = "PyShellExtension"
     _reg_progid_ = "Python.ShellExtension.winterTTr"
     _reg_desc_ = "Python Shell Extension from winterTTr"
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
             shell.IID_IContextMenu ,
+            shell.IID_ICopyHook , 
             pythoncom.IID_IPersistFile]
             #'IQueryInfo'
             #]
-    _public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods #+ IQueryInfo_Methods
+    #_public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods #+ IQueryInfo_Methods
+    _public_methods_ = \
+            shellcon.IContextMenu_Methods + \
+            shellcon.IShellExtInit_Methods + \
+            IPersistFile_Methods + \
+            ["CopyCallBack"]
 
     #_typelib_guid_ = '{41059C57-975F-4B36-8FF3-C5117426647A}'
     #_typelib_version_ = 1, 0
@@ -57,6 +64,22 @@ class ShellExtension:
 
 # =============== IQeuryInfo : to ======================
 
+# =============== ICopyHook : from ======================
+    def CopyCallBack(self, hwnd, func, flags,
+                         srcName, srcAttr, destName, destAttr):
+        if func == shellcon.FO_COPY:
+            print "==[CopyCallBack] Copy Folder"
+        elif func == shellcon.FO_DELETE:
+            print "==[CopyCallBack] Delete Folder"
+        elif func == shellcon.FO_MOVE:
+            print "==[CopyCallBack] Move folder."
+        elif func == shellcon.FO_RENAME:
+            print "==[CopyCallBack] rename folder."
+        return win32con.IDYES
+        return win32gui.MessageBox(hwnd, "Allow operation?", "CopyHook",
+                                       win32con.MB_YESNO)
+
+# =============== ICopyHook : to ======================
 
 # =============== IPersistFile : from ======================
     def IsDirty( self ):
@@ -252,23 +275,28 @@ class ShellExtension:
 def DllRegisterServer():
     import _winreg
 
-    # add to all file
+    # add ContextMenuHandler
     key = _winreg.CreateKey(
             _winreg.HKEY_CLASSES_ROOT,
-            "*\\shellex")
-    subkey = _winreg.CreateKey(key, "ContextMenuHandlers")
-    subkey2 = _winreg.CreateKey(subkey, "PyShellExtension")
-    _winreg.SetValueEx(subkey2, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
-    print ShellExtension._reg_desc_, "registration [file] complete."
+            "*\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_ )
+    _winreg.SetValueEx( key , None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
 
-    # add to all folder
     key = _winreg.CreateKey(
             _winreg.HKEY_CLASSES_ROOT,
-            "Folder\\shellex")
-    subkey = _winreg.CreateKey(key, "ContextMenuHandlers")
-    subkey2 = _winreg.CreateKey(subkey, "PyShellExtension")
-    _winreg.SetValueEx(subkey2, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
-    print ShellExtension._reg_desc_, "registration [folder] complete."
+            "directory\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_ )
+    _winreg.SetValueEx( key , None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    print ShellExtension._reg_desc_, "registration [ContextMenuHandler] complete."
+
+    # add CopyHookHandler
+    key = _winreg.CreateKey(_winreg.HKEY_CLASSES_ROOT,
+                            "directory\\shellex\\CopyHookHandlers\\" + ShellExtension._register_tag_)
+    _winreg.SetValueEx(key, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    print ShellExtension._reg_desc_, "registration [CopyHookHandler] complete."
+
+    # register to approve
+    key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"  , 0 , _winreg.KEY_ALL_ACCESS )
+    _winreg.SetValueEx( key , ShellExtension._reg_clsid_ , 0 , _winreg.REG_SZ , ShellExtension._reg_progid_ )
+    print ShellExtension._reg_desc_, "Add to approve list"
 
     # add to txt type
     #key = _winreg.CreateKey(
@@ -278,10 +306,6 @@ def DllRegisterServer():
     #_winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
     #print ShellExtension._reg_desc_, "registration [txt file] complete."
 
-    # register to approve
-    key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"  , 0 , _winreg.KEY_ALL_ACCESS )
-    _winreg.SetValueEx( key , ShellExtension._reg_clsid_ , 0 , _winreg.REG_SZ , ShellExtension._reg_progid_ )
-    print ShellExtension._reg_desc_, "Add to approve list"
 
     #this_dir = os.path.dirname(__file__)
     #tlb = os.path.abspath(os.path.join(this_dir, "shell_extension.tlb"))
@@ -292,27 +316,40 @@ def DllRegisterServer():
 def DllUnregisterServer():
     import _winreg
 
-    # remove the all file
+    # remove ContextMenuHandler
     try:
-        key = _winreg.DeleteKey(
+        _winreg.DeleteKey(
                 _winreg.HKEY_CLASSES_ROOT,
-                "*\\shellex\\ContextMenuHandlers\\PythonSample")
+                "*\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_)
+        _winreg.DeleteKey(
+                _winreg.HKEY_CLASSES_ROOT,
+                "directory\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_)
     except WindowsError, details:
         import errno
         if details.errno != errno.ENOENT:
             raise
-    print ShellExtension._reg_desc_, "unregistration [file] complete."
+    print ShellExtension._reg_desc_, "unregistration [ContextMenuHandler] complete."
 
-    # remove the all folder
+    # remove CopyHookHandler
     try:
-        key = _winreg.DeleteKey(
+        _winreg.DeleteKey(
                 _winreg.HKEY_CLASSES_ROOT,
-                "Folder\\shellex\\ContextMenuHandlers\\PythonSample")
+                "directory\\shellex\\CopyHookHandlers\\" + ShellExtension._register_tag_)
     except WindowsError, details:
         import errno
         if details.errno != errno.ENOENT:
             raise
-    print ShellExtension._reg_desc_, "unregistration [Folder] complete."
+    print ShellExtension._reg_desc_, "unregistration [CopyHookHandler] complete."
+
+    # remove from approve list
+    try:
+        key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved" , 0 , _winreg.KEY_ALL_ACCESS)
+        _winreg.DeleteValue( key , ShellExtension._reg_clsid_ )
+    except WindowsError, details:
+        import errno
+        if details.errno != errno.ENOENT:
+            raise
+    print ShellExtension._reg_desc_, "Remove Approve list complete."
 
     # remove txt type
     #try:
@@ -325,16 +362,6 @@ def DllUnregisterServer():
     #        raise
     #print ShellExtension._reg_desc_, "unregistration [txt file] complete."
 
-
-    # remove approve
-    try:
-        key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved" , 0 , _winreg.KEY_ALL_ACCESS)
-        _winreg.DeleteValue( key , ShellExtension._reg_clsid_ )
-    except WindowsError, details:
-        import errno
-        if details.errno != errno.ENOENT:
-            raise
-    print ShellExtension._reg_desc_, "Remove Approve list complete."
 
 if __name__=='__main__':
     from win32com.server import register
