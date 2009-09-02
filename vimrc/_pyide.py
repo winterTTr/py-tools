@@ -166,4 +166,12 @@ def needToStartMaigc(): # {{{2
     return True
 # }}}2
 
+def searchImportInfo(): #{{{2
+    # get cursor position
+    curLineNo , curRowNo = vim.current.window.cursor
+
+    # make re search object
+
+# }}}2
+
 # }}}1

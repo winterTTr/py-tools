@@ -5,14 +5,11 @@
 
 "=============================================================================
 " Encoding and lang options {{{1
-"set langmenu=zh_CN.utf-8
-"set langmenu=en
 set langmenu=none
-"set termencoding=cp936
 set helplang=cn
 set fileformats=unix,dos
 if has("multi_byte")
-    set bomb
+    set nobomb
     set encoding=utf-8
     if has("unix")
         set fileencodings=ucs-bom,utf-8,euc-cn,prc,latin1
@@ -79,7 +76,7 @@ set confirm
 "}}}1
 "=============================================================================
 " Diff options {{{1
-set diffopt=filler,context:3,vertical
+set diffopt=filler,context:6,vertical
 " }}}1
 "=============================================================================
 " Search options {{{1
@@ -106,7 +103,7 @@ if !exists("autocommands_loaded")
     autocmd FileType css :set formatoptions=cql autoindent
     autocmd FileType c,cpp,h,java :set formatoptions=croql smartindent
                 \ comments=sr:/*,mb:*,ex:*/,:// expandtab
-    autocmd BufEnter * :cd %:p:h
+	"autocmd BufEnter * :cd %:p:h
     autocmd CursorMoved *.c,*.cpp,*.h,*.java call ColumnHighlight()
     autocmd InsertEnter *.c,*.cpp,*.h,*.java call RemoveHighlightOnInsertEnter()
     augroup CPPFile "{{{3
@@ -114,7 +111,7 @@ if !exists("autocommands_loaded")
         autocmd FileType cpp syn match cppFuncDef "::\~\?\zs\h\w*\ze([^)]*\()\s*\(const\)\?\)\?$"
                     \| hi def link cppFuncDef Special
     augroup END   " }}}3
-    "au GUIEnter * simalt ~x
+    "autocmd GUIEnter * simalt ~x
     " vim -b : edit binary using xxd-format!
     augroup Binary " {{{3
         au!
@@ -167,10 +164,10 @@ noremap <UP> gk
 noremap <DOWN> gj
 "--------------------------------}}}2
 
-" --- Close the file via <F4>--- {{{2
-nnoremap <F4> :q<CR>
-vnoremap <F4> <C-C>:q<CR>
-inoremap <F4> <C-O>:q<CR>
+" --- Close the file via <C-W>--- {{{2
+nnoremap <silent> <C-W> :q<CR>
+vnoremap <silent> <C-W> <C-C>:q<CR>
+inoremap <silent> <C-W> <C-O>:q<CR>
 " ------------------------------}}}2
 
 " --- Save the file via <C-S> ---{{{2
@@ -224,7 +221,7 @@ inoremap    <C-L>   <right>
 " --- Change the fonds via <F9> <F10> <F11>--- {{{2
 "nmap <F9> :set guifont=Lucida_Sans_Typewriter:h11:cANSI<CR>
 "nmap <F10> :set guifont=GB_YuanHei:h12:cGB2312<CR>
-nmap <F11> :set guifont=*<CR>
+"nmap <F11> :set guifont=*<CR>
 " ---------------------------------- }}}2
 
 " --- <M-/> no highlight :nohl --- {{{2
@@ -261,7 +258,7 @@ nnoremap <c-p> p
 " ------------------------------------ }}}2
 
 " --- Open with EmEditor --- {{{2
-nnoremap <F9>  execute '! start "EmEditor" "C:\Program Files\EmEditor\EmEditor.exe" '.substitute(expand("%:p"),'/','\','g')<CR>
+"nnoremap <F9>  execute '! start "EmEditor" "C:\Program Files\EmEditor\EmEditor.exe" '.substitute(expand("%:p"),'/','\','g')<CR>
 " ------------------------------------ }}}2
 
 " -- Open the current files directory and command line here --- {{{2
@@ -270,8 +267,8 @@ if has("gui_running")
         " Open the folder containing the currently open file. Double <CR> at end
         " is so you don't have to hit return after command. Double quotes are
         " not necessary in the 'explorer.exe %:p:h' section.
-        nnoremap <silent> <C-F5> :if expand("%:p:h") != "" \|execute '!start explorer.exe '.substitute(expand("%:p:h"),'/','\','g')\|endif<CR>
-        nnoremap <silent> <C-F6> :!start cmd.exe<CR>
+        nnoremap <silent> <C-F5> :if expand("%:p:h") != "" \|execute '!start explorer /e,/select,'.substitute(expand("%:p"),'/','\','g')\|endif<CR>
+        nnoremap <silent> <C-F6> :execute '!start cmd.exe /k cd /d "' . expand("%:h") . '"'<CR>
     endif
 endif
 " --------------------------------------- }}}2
@@ -289,7 +286,7 @@ lang message en_US
 " Abbreviations {{{1
 ""--------------------------------------------------
 " See from the TTrCodeAssistor.vim which is wroten by me. :-)
-let g:TTrCodeAssistor_AutoStart=1
+let g:TTrCodeAssistor_AutoStart=0
 ""}}}1
 "=============================================================================
 " Cscope Options and map {{{1
@@ -337,6 +334,13 @@ let Tlist_Use_SingleClick=0
 let Tlist_Exit_OnlyWindow=1
 let updatetime=4
 let Tlist_Sort_Type="name"
+" }}}1
+"=============================================================================
+" minibuffer options {{{1
+"let g:miniBufExplMapWindowNavVim = 1 
+"let g:miniBufExplMapWindowNavArrows = 1 
+"let g:miniBufExplMapCTabSwitchBufs = 1 
+"let g:miniBufExplModSelTarget = 1
 " }}}1
 "=============================================================================
 " Commands {{{1
@@ -560,8 +564,8 @@ endfunction
 
 " --- Toggle Comments --- {{{2
 
-nnoremap <F7> :call TTrCodeAssistor_ToggleComments()<CR>
-vnoremap <F7> :call TTrCodeAssistor_ToggleComments()<CR>
+"nnoremap <F7> :call TTrCodeAssistor_ToggleComments()<CR>
+"vnoremap <F7> :call TTrCodeAssistor_ToggleComments()<CR>
 " ----------------------- }}}2
 
 "}}}1
@@ -756,6 +760,7 @@ menu <silent> TT&r.&Utilities.&Calendar<tab>:Calendar :Calendar<CR>
 "sh, ksh:  export MANPAGER="col -b | view -c 'set ft=man nomod nolist' -" }}}2
 " }}}1
 "=============================================================================
+
 
 " vim: set ft=vim ff=unix tw=72 foldmethod=marker :
 
