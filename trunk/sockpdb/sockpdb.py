@@ -10,46 +10,44 @@ DEFAULT_TIMEOUT = 0.1
 
 
 class SocketFileObject(object):
+    __socket_server_singleton__  = None
+    __client_connection_singleton__ = None
     def __init__( self  , ip , port , is_server = True ):
         self.is_server = is_server
-        if is_server:
-            self.server_socket = socket.socket( socket.AF_INET , socket.SOCK_STREAM )
-            self.server_socket.bind( (ip , port) )
-            self.server_socket.listen(1)
-            self.conn , self.addr = self.server_socket.accept()
+        if is_server :
+            if SocketFileObject.__socket_server_singleton__ == None :
+                SocketFileObject.__socket_server_singleton__ = socket.socket( socket.AF_INET , socket.SOCK_STREAM )
+                SocketFileObject.__socket_server_singleton__.bind( (ip , port) )
+                SocketFileObject.__socket_server_singleton__.listen(1)
+                SocketFileObject.__client_connection_singleton__ , addr = SocketFileObject.__socket_server_singleton__.accept()
         else:
-            self.conn = socket.socket( socket.AF_INET , socket.SOCK_STREAM )
-            self.conn.connect( ( ip , port ) )
+            SocketFileObject.__client_connection_singleton__ = socket.socket( socket.AF_INET , socket.SOCK_STREAM )
+            SocketFileObject.__client_connection_singleton__.connect( ( ip , port ) )
 
-        self.conn.settimeout( DEFAULT_TIMEOUT )
-
-    def __del__( self ):
-        self.conn.close()
-        if self.is_server:
-            self.server_socket.close()
-
+        SocketFileObject.__client_connection_singleton__.settimeout( DEFAULT_TIMEOUT )
 
     def close( self ):
-        self.conn.close()
+        pass
+        #SocketFileObject.__client_connection_singleton__.close()
 
     def readline( self ):
-        self.conn.settimeout( None )
-        str =  self.conn.recv( 1024 )
-        self.conn.settimeout( DEFAULT_TIMEOUT )
+        SocketFileObject.__client_connection_singleton__.settimeout( None )
+        str =  SocketFileObject.__client_connection_singleton__.recv( 1024 )
+        SocketFileObject.__client_connection_singleton__.settimeout( DEFAULT_TIMEOUT )
         return str
 
     def readall( self ):
         all_data = []
         while True:
             try:
-                data = self.conn.recv( 1024 )
+                data = SocketFileObject.__client_connection_singleton__.recv( 1024 )
                 all_data.append( data )
             except:
                 break
         return ''.join( all_data )
 
     def write( self , str ):
-        self.conn.sendall( str )
+        SocketFileObject.__client_connection_singleton__.sendall( str )
 
     def flush( self ):
         pass
