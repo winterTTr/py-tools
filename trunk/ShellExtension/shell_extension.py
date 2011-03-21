@@ -9,64 +9,44 @@ __svnid__ = "$Id$"
 __version__ = "$Revision$"[11:-2]
 
 
+import os
+## com
+import winerror
 import pythoncom
 from win32com.shell import shell, shellcon
+from win32com.server.exception import COMException
+## win32
 import win32gui
 import win32con
-import os
+## XML
 from xml.etree import cElementTree as ET
+## Process
 import subprocess
-import winerror
-from win32com.server.exception import COMException
 from pywintypes import IID
-import ctypes
+## log
+import logging
 
-
-IPersistFile_Methods = "IsDirty Load Save SaveCompleted GetCurFile".split()
-
-#IID_IQueryInfo = "{00021500-0000-0000-C000-000000000046}"
-#IQueryInfo_Methods = ["GetInfoFlags","GetInfoTip"]
-
+# global const
+CWD = os.path.split( __file__ )[0]
 
 class ShellExtension:
     _register_tag_ = "PyShellExtension"
+
     _reg_progid_ = "Python.ShellExtension.winterTTr"
     _reg_desc_ = "Python Shell Extension from winterTTr"
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
             shell.IID_IContextMenu ,
-            shell.IID_ICopyHook , 
-            pythoncom.IID_IPersistFile]
-            #'IQueryInfo'
-            #]
-    #_public_methods_ = shellcon.IContextMenu_Methods + shellcon.IShellExtInit_Methods + IPersistFile_Methods #+ IQueryInfo_Methods
+            shell.IID_ICopyHook ]
     _public_methods_ = \
             shellcon.IContextMenu_Methods + \
             shellcon.IShellExtInit_Methods + \
-            IPersistFile_Methods + \
             ["CopyCallBack"]
 
-    #_typelib_guid_ = '{41059C57-975F-4B36-8FF3-C5117426647A}'
-    #_typelib_version_ = 1, 0
-
-# =============== IQeuryInfo : from ======================
-    def GetInfoFlags(self):
-        print "==[GetInfoFlags] return 0 to default"
-        return 0
-        raise COMException(scode = winerror.E_NOTIMPL)
-
-
-    def GetInfoTip( self , flags ):
-        raise COMException(scode = winerror.E_NOTIMPL)
-        print "==[GetInfoTip] flags : " , flags
-        return "abc"
-
-# =============== IQeuryInfo : to ======================
 
 # =============== ICopyHook : from ======================
-    def CopyCallBack(self, hwnd, func, flags,
-                         srcName, srcAttr, destName, destAttr):
+    def CopyCallBack(self, hwnd, func, flags, srcName, srcAttr, destName, destAttr):
         if func == shellcon.FO_COPY:
             print "==[CopyCallBack] Copy Folder"
         elif func == shellcon.FO_DELETE:
@@ -75,32 +55,10 @@ class ShellExtension:
             print "==[CopyCallBack] Move folder."
         elif func == shellcon.FO_RENAME:
             print "==[CopyCallBack] rename folder."
+        #return win32gui.MessageBox(hwnd, "Allow operation?", "CopyHook", win32con.MB_YESNO)
         return win32con.IDYES
-        return win32gui.MessageBox(hwnd, "Allow operation?", "CopyHook",
-                                       win32con.MB_YESNO)
-
 # =============== ICopyHook : to ======================
 
-# =============== IPersistFile : from ======================
-    def IsDirty( self ):
-        raise COMException(scode = winerror.E_NOTIMPL)
-
-    def Load(self, filename, mode):
-       #self.filename = filename
-       #self.mode = mode
-       print "==[Load] filename : " , filename
-
-
-    def Save( self ,FileName, Remember):
-        raise COMException(scode = winerror.E_NOTIMPL)
-
-    def SaveCompleted( self , pszFileName):
-        raise COMException(scode = winerror.E_NOTIMPL)
-
-    def GetCurFile( self ):
-        raise COMException(scode = winerror.E_NOTIMPL)
-
-# =============== IPersistFile : to  ======================
 
 
 # =============== IShellExtInit : from  ======================
