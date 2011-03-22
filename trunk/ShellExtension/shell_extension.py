@@ -10,6 +10,7 @@ __version__ = "$Revision$"[11:-2]
 
 
 import os
+import _winreg
 ## com
 import winerror
 import pythoncom
@@ -64,23 +65,23 @@ class ShellExtension:
 # =============== IShellExtInit : from  ======================
 
     def Initialize(self, folder, dataobj, hkey):
-        self.dataobj = dataobj
-        self.selection_list = []
-        self.condition_dict = {}
-        self.menu_item = []
+        self.selectionList = []
+        if dataobj : # select file/directory 
+            try:
+                format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
+                sm = dataobj.GetData(format_etc)
+            except pythoncom.com_error:
+                raise COMException(desc='GetData Error' , scode = winerror.E_INVALIDARG)
+            self.selectionList = map ( 
+                    lambda x : shell.DragQueryFile( sm.data_handle , x ) , 
+                    range( shell.DragQueryFile(sm.data_handle, -1) ) )
 
-        # save user selection
-        try:
-            format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
-            sm = self.dataobj.GetData(format_etc)
-        except pythoncom.com_error:
-            raise COMException(desc='GetData Error' , scode = winerror.E_INVALIDARG)
+        if folder: # select background
+            targetDir = shell.SHGetPathFromIDList( folder )
+            self.selectionList.append( targetDir )
 
-        num_files = shell.DragQueryFile(sm.data_handle, -1)
-        for index in xrange(num_files):
-            fname = shell.DragQueryFile( sm.data_handle , index )
-            self.selection_list.append( fname )
-            print "====[Initialize] select file : %s ======" % fname
+        for f in self.selectionList:
+            print "ShellExtension::Initialize] select file : %s" %  f
 
 # =============== IShellExtInit : to  ======================
 
@@ -94,7 +95,7 @@ class ShellExtension:
         self.condition_dict['num']= len( name_list )
         self.condition_dict['type']= []
         
-        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # Check == here, since CMF_NORMAL=0
+        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # use == here, since CMF_NORMAL=0
             print "==[GetValidMenuItem] CMF_NORMAL..."
         elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
             self.condition_dict['type'].append('link')
@@ -153,60 +154,61 @@ class ShellExtension:
         return True
         
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
-        print "======================QCM ==================="
-        print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
-        print "============================================="
+        #print "======================QCM ==================="
+        #print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
+        #print "============================================="
 
 
-        self.menu_item = self.GetValidMenuItem( self.selection_list , uFlags )
-        if len( self.menu_item ) == 0:
-            print "==[QueryContextMenu] No Menu find"
-            return 0
+        #self.menu_item = self.GetValidMenuItem( self.selection_list , uFlags )
+        #if len( self.menu_item ) == 0:
+        #    print "==[QueryContextMenu] No Menu find"
+        #    return 0
 
-        ## insert a separator
-        win32gui.InsertMenu(
-                hMenu, 
-                indexMenu,
-                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-                0, 
-                None)
-        indexMenu += 1
+        ### insert a separator
+        #win32gui.InsertMenu(
+        #        hMenu, 
+        #        indexMenu,
+        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+        #        0, 
+        #        None)
+        #indexMenu += 1
 
 
-        # add sub menu
-        root_menu = win32gui.CreatePopupMenu()
-        win32gui.InsertMenu(
-                hMenu, 
-                indexMenu,
-                win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
-                root_menu, 
-                u"Py&ShellExtension")
-        indexMenu += 1
+        ## add sub menu
+        #root_menu = win32gui.CreatePopupMenu()
+        #win32gui.InsertMenu(
+        #        hMenu, 
+        #        indexMenu,
+        #        win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
+        #        root_menu, 
+        #        u"Py&ShellExtension")
+        #indexMenu += 1
 
-        ## add items to sub menu
-        sub_index = 0 
-        idCmd = idCmdFirst
-        for item in self.menu_item:
-            menu_name = item.find('menu').text
-            win32gui.InsertMenu(
-                    root_menu, 
-                    sub_index,
-                    win32con.MF_STRING|win32con.MF_BYPOSITION,
-                    idCmd, 
-                    menu_name)
-            sub_index += 1
-            idCmd += 1
+        ### add items to sub menu
+        #sub_index = 0 
+        #idCmd = idCmdFirst
+        #for item in self.menu_item:
+        #    menu_name = item.find('menu').text
+        #    win32gui.InsertMenu(
+        #            root_menu, 
+        #            sub_index,
+        #            win32con.MF_STRING|win32con.MF_BYPOSITION,
+        #            idCmd, 
+        #            menu_name)
+        #    sub_index += 1
+        #    idCmd += 1
 
-        # add one separator
-        win32gui.InsertMenu(
-                hMenu, 
-                indexMenu,
-                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-                0,
-                None)
-        indexMenu += 1
+        ## add one separator
+        #win32gui.InsertMenu(
+        #        hMenu, 
+        #        indexMenu,
+        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+        #        0,
+        #        None)
+        #indexMenu += 1
 
-        return idCmd-idCmdFirst # Must return number of menu items we added.
+        #return idCmd-idCmdFirst # Must return number of menu items we added.
+        return 0
 
     def InvokeCommand(self, ci):
         mask, hwnd, verb, params, dir, nShow, hotkey, hicon = ci
@@ -230,25 +232,28 @@ class ShellExtension:
 
 # =============== IContextMenu : to  ======================
 
+REGISTER_PATH_LIST = [
+        "*\\shellex\\ContextMenuHandlers\\",
+        "directory\\shellex\\ContextMenuHandlers\\",
+        "directory\\background\\shellex\\ContextMenuHandlers\\" ]
+
+def addRegisterKeyUnderPath( aPath ):
+    key = _winreg.CreateKey(
+            _winreg.HKEY_CLASSES_ROOT,
+            aPath + ShellExtension._register_tag_ )
+    _winreg.SetValueEx( key , None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+
+def removeRegisterKeyUnderPath( aPath ):
+    _winreg.DeleteKey( _winreg.HKEY_CLASSES_ROOT, aPath + ShellExtension._register_tag_)
+
+
 def DllRegisterServer():
-    import _winreg
-
-    # add ContextMenuHandler
-    key = _winreg.CreateKey(
-            _winreg.HKEY_CLASSES_ROOT,
-            "*\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_ )
-    _winreg.SetValueEx( key , None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
-
-    key = _winreg.CreateKey(
-            _winreg.HKEY_CLASSES_ROOT,
-            "directory\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_ )
-    _winreg.SetValueEx( key , None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    for path in REGISTER_PATH_LIST:
+        addRegisterKeyUnderPath( path )
     print ShellExtension._reg_desc_, "registration [ContextMenuHandler] complete."
 
     # add CopyHookHandler
-    key = _winreg.CreateKey(_winreg.HKEY_CLASSES_ROOT,
-                            "directory\\shellex\\CopyHookHandlers\\" + ShellExtension._register_tag_)
-    _winreg.SetValueEx(key, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
+    addRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
     print ShellExtension._reg_desc_, "registration [CopyHookHandler] complete."
 
     # register to approve
@@ -256,32 +261,12 @@ def DllRegisterServer():
     _winreg.SetValueEx( key , ShellExtension._reg_clsid_ , 0 , _winreg.REG_SZ , ShellExtension._reg_progid_ )
     print ShellExtension._reg_desc_, "Add to approve list"
 
-    # add to txt type
-    #key = _winreg.CreateKey(
-    #        _winreg.HKEY_CLASSES_ROOT,
-    #        "txtfile\\shellex")
-    #subkey = _winreg.CreateKey(key, IID_IQueryInfo)
-    #_winreg.SetValueEx(subkey, None, 0, _winreg.REG_SZ, ShellExtension._reg_clsid_)
-    #print ShellExtension._reg_desc_, "registration [txt file] complete."
-
-
-    #this_dir = os.path.dirname(__file__)
-    #tlb = os.path.abspath(os.path.join(this_dir, "shell_extension.tlb"))
-    #tli=pythoncom.LoadTypeLib(tlb)
-    #pythoncom.RegisterTypeLib(tli,tlb)
-
 
 def DllUnregisterServer():
-    import _winreg
-
     # remove ContextMenuHandler
     try:
-        _winreg.DeleteKey(
-                _winreg.HKEY_CLASSES_ROOT,
-                "*\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_)
-        _winreg.DeleteKey(
-                _winreg.HKEY_CLASSES_ROOT,
-                "directory\\shellex\\ContextMenuHandlers\\" + ShellExtension._register_tag_)
+        for path in REGISTER_PATH_LIST:
+            removeRegisterKeyUnderPath( path )
     except WindowsError, details:
         import errno
         if details.errno != errno.ENOENT:
@@ -290,9 +275,7 @@ def DllUnregisterServer():
 
     # remove CopyHookHandler
     try:
-        _winreg.DeleteKey(
-                _winreg.HKEY_CLASSES_ROOT,
-                "directory\\shellex\\CopyHookHandlers\\" + ShellExtension._register_tag_)
+        removeRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
     except WindowsError, details:
         import errno
         if details.errno != errno.ENOENT:
@@ -308,17 +291,6 @@ def DllUnregisterServer():
         if details.errno != errno.ENOENT:
             raise
     print ShellExtension._reg_desc_, "Remove Approve list complete."
-
-    # remove txt type
-    #try:
-    #    key = _winreg.DeleteKey(
-    #            _winreg.HKEY_CLASSES_ROOT,
-    #            "txtfile\\shellex\\%s" % IID_IQueryInfo )
-    #except WindowsError, details:
-    #    import errno
-    #    if details.errno != errno.ENOENT:
-    #        raise
-    #print ShellExtension._reg_desc_, "unregistration [txt file] complete."
 
 
 if __name__=='__main__':
