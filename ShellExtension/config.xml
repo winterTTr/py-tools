@@ -1,33 +1,44 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <config>
-	<item>
-		<menu>&amp;cmd here...</menu>
-		<target>
-			<num>1</num>
+	<menu>
+		<name>open cmd here...</name>
+		<match>
+            <number>1</number>
 			<type>dir</type>
-		</target>
+		</match>
 		<command>
             <exec>cmd.exe /K "cd /d %s"</exec>
 		</command>
-	</item>
-	<item>
-		<menu>open with &amp;gvim...</menu>
-		<target>
+	</menu>
+    <menu>
+        <name>send to localhost:8787 ...</name>
+        <match>
+            <number>1</number>
+            <type>file</type>
+            <pattern>(\.json|\.gsl)$</pattern>
+        </match>
+        <command>
+            <exec>cmd.exe /K "cd /d %s"</exec>
+        </command>
+    </menu>
+	<menu>
+		<name>open with &amp;gvim...</name>
+		<match>
 			<num>-1</num>
 			<type>file,dir</type>
-		</target>
+		</match>
 		<command>
 			<exec>gvim.exe -p %s</exec>
 		</command>
-	</item>
-	<item>
-		<menu>Open Target Dir...</menu>
-		<target>
+	</menu>
+	<menu>
+		<name>Open Target Dir...</name>
+		<match>
 			<num>1</num>
 			<type>link</type>
-		</target>
+		</match>
 		<command>
 			<exec>explorer /e,/select,%s</exec>
 		</command>
-	</item>
+	</menu>
 </config>

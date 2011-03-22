@@ -1,1 +1,1 @@
-C:\Python31\python.exe shell_extension.py --unregister
+C:\Python27\python.exe shell_extension.py --unregister
