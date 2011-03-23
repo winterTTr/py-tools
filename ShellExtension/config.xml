@@ -6,9 +6,7 @@
             <number>1</number>
 			<type>dir</type>
 		</match>
-		<command>
-            <exec>cmd.exe /K "cd /d %s"</exec>
-		</command>
+		<command>cmd.exe /K "cd /d %s"</command>
 	</menu>
     <menu>
         <name>send to localhost:8787 ...</name>
@@ -17,28 +15,14 @@
             <type>file</type>
             <pattern>(\.json|\.gsl)$</pattern>
         </match>
-        <command>
-            <exec>cmd.exe /K "cd /d %s"</exec>
-        </command>
+        <command>balabala...</command>
     </menu>
-	<menu>
-		<name>open with &amp;gvim...</name>
-		<match>
-			<num>-1</num>
-			<type>file,dir</type>
-		</match>
-		<command>
-			<exec>gvim.exe -p %s</exec>
-		</command>
-	</menu>
 	<menu>
 		<name>Open Target Dir...</name>
 		<match>
-			<num>1</num>
+			<number>1</number>
 			<type>link</type>
 		</match>
-		<command>
-			<exec>explorer /e,/select,%s</exec>
-		</command>
+		<command>explorer /e,/select,%s</command>
 	</menu>
 </config>

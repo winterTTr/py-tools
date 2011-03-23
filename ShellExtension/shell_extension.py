@@ -10,6 +10,7 @@ __version__ = "$Revision$"[11:-2]
 
 
 import os
+import re
 import _winreg
 ## com
 import winerror
@@ -20,15 +21,116 @@ from win32com.server.exception import COMException
 import win32gui
 import win32con
 ## XML
-from xml.etree import cElementTree as ET
+from xml.etree import cElementTree as et
 ## Process
 import subprocess
-from pywintypes import IID
 ## log
 import logging
 
 # global const
 CWD = os.path.split( __file__ )[0]
+
+class SHEMenu:
+    def __init__( self , xmlNode ):
+        # menu name
+        self.name = xmlNode.find("name").text
+
+        # match 
+        ## number
+        number = xmlNode.find("match/number")
+        print "[==]SHEMenu::__init__ number:" , number
+        print "[==]SHEMenu::__init__ number:" , number.text
+        self.number =  int( number.text ) if number else 0
+        print "[==]SHEMenu::__init__ number:" , self.number
+        ## type
+        type = xmlNode.find("match/type")
+        print "[==]SHEMenu::__init__ type:" , type
+        print "[==]SHEMenu::__init__ type:" , type.text
+        self.type = set( type.text.split(",") if type else [ "dir" , "file" , "background" , "link" ] )
+        print "[==]SHEMenu::__init__ number:" , self.type
+        ## pattern
+        pattern = xmlNode.find("match/pattern")
+        print "[==]SHEMenu::__init__ pattern:" , pattern
+        print "[==]SHEMenu::__init__ pattern:" , pattern.text if pattern else ""
+        self._pattern = pattern.text if pattern else ".*"
+        self.pattern = re.compile( self._pattern )
+        print "[==]SHEMenu::__init__ number:" , self._pattern
+
+        # command
+        self.command = xmlNode.find("command").text
+
+
+    def isValid( self , context ):
+        if context.defaultOnly: return False
+        if self.number != 0 and self.number != len ( context.selection ): return False
+        if not self.type.issubset( context.type ): return False
+
+        for s in context.selection:
+            if not self.pattern.match( s ):
+                return False
+        return True
+
+
+    def str( self ):
+        ret = []
+        ret.append( "[==] --- menu item ---" )
+        ret.append( "name         :" + self.name )
+        ret.append( "match/number :" + str( self.number ) )
+        ret.append( "match/type   :" + str( self.type )  )
+        ret.append( "match/pattern:" + self._pattern  )
+        ret.append( "command      :" + self.command )
+        ret.append( "[==] ------------------" )
+        return "\n".join( ret )
+
+class SHEConfig:
+    def __init__( self , configFileName = None ):
+        if not configFileName :
+            configFileName = os.path.join( CWD , "config.xml" )
+        with open( configFileName , 'r' ) as f:
+            etree = et.parse( configFileName )
+        self.menu = map( lambda x : SHEMenu(x) , etree.findall("menu") )
+
+    def getValidMenu( self , context ):
+        return filter( lambda x : x.isValid( context ) , self.menu )
+
+class SHEContext:
+    def __init__( self ):
+        self.selection = []
+        self.isBackground = False
+        self.type = set()
+        self.flag = 0
+        self.defaultOnly = False
+
+
+    def addSelection( self , selection ):
+        self.selection.append( selection )
+        if os.path.isdir( selection ):
+            self.type.add("dir")
+        elif os.path.isfile( selection ):
+            ## NOTE: link will also be trade as file
+            self.type.add("file")
+
+    @property
+    def flag( self ):
+        return self.flag
+
+    @flag.setter
+    def flag( self, uFlags ):
+        self.flag = uFlags
+        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # use == here, since CMF_NORMAL=0
+            print "[==]SHEContext::flag CMF_NORMAL"
+        elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
+            self.type.add('link')
+            print "[==]SHEContext::flag CMF_VERBSONLY"
+        elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
+            print "[==]SHEContext::flag CMF_EXPLORE"
+        elif uFlags & CMF_DEFAULTONLY:               # should do nothing
+            print "[==]SHEContext::flag CMF_DEFAULTONLY"
+            self.defaultOnly = True
+        else:                                        # something wrong maybe
+            print "[==]SHEContext::flag ** unknown flags ", uFlags
+
+
 
 class ShellExtension:
     _register_tag_ = "PyShellExtension"
@@ -38,26 +140,26 @@ class ShellExtension:
     _reg_clsid_ = "{EB0D2B97-287A-4B91-A455-D2E021B894AC}"
     _com_interfaces_ = [ 
             shell.IID_IShellExtInit, 
-            shell.IID_IContextMenu ,
-            shell.IID_ICopyHook ]
+            shell.IID_IContextMenu ]
+            #shell.IID_ICopyHook ]
     _public_methods_ = \
             shellcon.IContextMenu_Methods + \
-            shellcon.IShellExtInit_Methods + \
-            ["CopyCallBack"]
+            shellcon.IShellExtInit_Methods 
+            #["CopyCallBack"]
 
 
 # =============== ICopyHook : from ======================
-    def CopyCallBack(self, hwnd, func, flags, srcName, srcAttr, destName, destAttr):
-        if func == shellcon.FO_COPY:
-            print "==[CopyCallBack] Copy Folder"
-        elif func == shellcon.FO_DELETE:
-            print "==[CopyCallBack] Delete Folder"
-        elif func == shellcon.FO_MOVE:
-            print "==[CopyCallBack] Move folder."
-        elif func == shellcon.FO_RENAME:
-            print "==[CopyCallBack] rename folder."
-        #return win32gui.MessageBox(hwnd, "Allow operation?", "CopyHook", win32con.MB_YESNO)
-        return win32con.IDYES
+    #def CopyCallBack(self, hwnd, func, flags, srcName, srcAttr, destName, destAttr):
+    #    if func == shellcon.FO_COPY:
+    #        print "==[CopyCallBack] Copy Folder"
+    #    elif func == shellcon.FO_DELETE:
+    #        print "==[CopyCallBack] Delete Folder"
+    #    elif func == shellcon.FO_MOVE:
+    #        print "==[CopyCallBack] Move folder."
+    #    elif func == shellcon.FO_RENAME:
+    #        print "==[CopyCallBack] rename folder."
+    #    #return win32gui.MessageBox(hwnd, "Allow operation?", "CopyHook", win32con.MB_YESNO)
+    #    return win32con.IDYES
 # =============== ICopyHook : to ======================
 
 
@@ -65,98 +167,41 @@ class ShellExtension:
 # =============== IShellExtInit : from  ======================
 
     def Initialize(self, folder, dataobj, hkey):
-        self.selectionList = []
+        self.context = SHEContext()
+
         if dataobj : # select file/directory 
             try:
                 format_etc = win32con.CF_HDROP, None, pythoncom.DVASPECT_CONTENT , -1, pythoncom.TYMED_HGLOBAL
                 sm = dataobj.GetData(format_etc)
             except pythoncom.com_error:
                 raise COMException(desc='GetData Error' , scode = winerror.E_INVALIDARG)
-            self.selectionList = map ( 
+            selection = map ( 
                     lambda x : shell.DragQueryFile( sm.data_handle , x ) , 
                     range( shell.DragQueryFile(sm.data_handle, -1) ) )
+            for s in selection:
+                self.context.addSelection( s )
 
-        if folder: # select background
+        if folder: # select directory background
             targetDir = shell.SHGetPathFromIDList( folder )
-            self.selectionList.append( targetDir )
+            self.context.addSelection( targetDir )
+            self.context.isBackground = True
 
-        for f in self.selectionList:
-            print "ShellExtension::Initialize] select file : %s" %  f
+        for f in self.context.selection:
+            print "[==]ShellExtension::Initialize select file : %s" %  f
 
 # =============== IShellExtInit : to  ======================
 
 
 
 # =============== IContextMenu : from  ======================
-
-    def GetValidMenuItem( self , name_list , uFlags):
-        
-        # make target type
-        self.condition_dict['num']= len( name_list )
-        self.condition_dict['type']= []
-        
-        if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # use == here, since CMF_NORMAL=0
-            print "==[GetValidMenuItem] CMF_NORMAL..."
-        elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
-            self.condition_dict['type'].append('link')
-            print "==[GetValidMenuItem] CMF_VERBSONLY..."
-        elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
-            print "==[GetValidMenuItem] CMF_EXPLORE..."
-        elif uFlags & CMF_DEFAULTONLY:               # should do nothing
-            print "==[GetValidMenuItem] CMF_DEFAULTONLY..."
-            return []
-        else:                                        # something wrong maybe
-            print "==[GetValidMenuItem] ** unknown flags", uFlags
-            return []
-
-
-        if len( self.condition_dict['type'] ) == 0:
-            tag_file = False
-            tag_dir = False
-            for x in name_list :
-                if os.path.isdir( x ):
-                    tag_dir = True
-                else:
-                    tag_file = True
-
-                if tag_file and tag_dir:
-                    break
-
-            if tag_file:
-                self.condition_dict['type'].append('file')
-            if tag_dir:
-                self.condition_dict['type'].append('dir')
-
-
-            print "==[GetValidMenuItem] No Link , type" , self.condition_dict['type']
-
-        # get valid item
-        config_file_path = os.path.join( os.path.split( __file__ )[0] , 'config.xml' )
-        print "==[GetValidMenuItem] %s" % config_file_path
-        return filter( self.CheckItem , ET.ElementTree( file= config_file_path ).findall('item') )
-
-    def CheckItem( self , item ):
-        target_conf = item.find('target')
-        tc_num = int( target_conf.find('num').text )
-        tc_type = target_conf.find('type').text.split(',')
-
-        print "==[CheckItem] : tc_num " , tc_num , "| tc_type :" , tc_type
-
-        # check num
-        if tc_num != -1 and ( self.condition_dict['num'] != tc_num ):
-            return False
-
-        # check type
-        for x in self.condition_dict['type']:
-            if not ( x in tc_type ):
-                return False
-
-        return True
-        
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
-        #print "======================QCM ==================="
-        #print hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags
-        #print "============================================="
+        self.context.flag = uFlags
+
+        self.config = SHEConfig()
+        for m in self.config.menu:
+            print m.str()
+
+        menu = self.config.getValidMenu( self.context )
 
 
         #self.menu_item = self.GetValidMenuItem( self.selection_list , uFlags )
@@ -164,14 +209,14 @@ class ShellExtension:
         #    print "==[QueryContextMenu] No Menu find"
         #    return 0
 
-        ### insert a separator
-        #win32gui.InsertMenu(
-        #        hMenu, 
-        #        indexMenu,
-        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-        #        0, 
-        #        None)
-        #indexMenu += 1
+        ## insert a separator
+        win32gui.InsertMenu(
+                hMenu, 
+                indexMenu,
+                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+                0, 
+                None)
+        indexMenu += 1
 
 
         ## add sub menu
@@ -208,22 +253,23 @@ class ShellExtension:
         #indexMenu += 1
 
         #return idCmd-idCmdFirst # Must return number of menu items we added.
-        return 0
+        return 1
 
     def InvokeCommand(self, ci):
         mask, hwnd, verb, params, dir, nShow, hotkey, hicon = ci
         #win32gui.MessageBox(hwnd, u"x", u"xx", win32con.MB_OK)
+        print "[==]" , mask, hwnd, verb, params, dir, nShow, hotkey, hicon
 
-        cmd_exec = self.menu_item[verb].find('command/exec').text
-        
-        # make path
-        path = subprocess.list2cmdline( self.selection_list )
-        print "==[InvokeCommand] path = %s" % path
-        try:
-            full_command_exec = cmd_exec % path 
-        except:
-            full_command_exec = cmd_exec
-        subprocess.Popen( full_command_exec )
+        #cmd_exec = self.menu_item[verb].find('command/exec').text
+        #
+        ## make path
+        #path = subprocess.list2cmdline( self.selection_list )
+        #print "==[InvokeCommand] path = %s" % path
+        #try:
+        #    full_command_exec = cmd_exec % path 
+        #except:
+        #    full_command_exec = cmd_exec
+        #subprocess.Popen( full_command_exec )
 
         
 
@@ -252,9 +298,9 @@ def DllRegisterServer():
         addRegisterKeyUnderPath( path )
     print ShellExtension._reg_desc_, "registration [ContextMenuHandler] complete."
 
-    # add CopyHookHandler
-    addRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
-    print ShellExtension._reg_desc_, "registration [CopyHookHandler] complete."
+    ## add CopyHookHandler
+    #addRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
+    #print ShellExtension._reg_desc_, "registration [CopyHookHandler] complete."
 
     # register to approve
     key = _winreg.OpenKey( _winreg.HKEY_LOCAL_MACHINE , "Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"  , 0 , _winreg.KEY_ALL_ACCESS )
@@ -273,14 +319,14 @@ def DllUnregisterServer():
             raise
     print ShellExtension._reg_desc_, "unregistration [ContextMenuHandler] complete."
 
-    # remove CopyHookHandler
-    try:
-        removeRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
-    except WindowsError, details:
-        import errno
-        if details.errno != errno.ENOENT:
-            raise
-    print ShellExtension._reg_desc_, "unregistration [CopyHookHandler] complete."
+    ## remove CopyHookHandler
+    #try:
+    #    removeRegisterKeyUnderPath( "directory\\shellex\\CopyHookHandlers\\" )
+    #except WindowsError, details:
+    #    import errno
+    #    if details.errno != errno.ENOENT:
+    #        raise
+    #print ShellExtension._reg_desc_, "unregistration [CopyHookHandler] complete."
 
     # remove from approve list
     try:
