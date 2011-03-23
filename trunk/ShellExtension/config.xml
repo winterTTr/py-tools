@@ -1,5 +1,13 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <config>
+    <menu>
+        <name>test for file...</name>
+        <match>
+            <number>1</number>
+            <type>file</type>
+        </match>
+        <command>cmd.exe /K "cd /d %s"</command>
+    </menu>
 	<menu>
 		<name>open cmd here...</name>
 		<match>
@@ -9,11 +17,10 @@
 		<command>cmd.exe /K "cd /d %s"</command>
 	</menu>
     <menu>
-        <name>send to localhost:8787 ...</name>
+        <name>send to localhost 8787 ...</name>
         <match>
             <number>1</number>
             <type>file</type>
-            <pattern>(\.json|\.gsl)$</pattern>
         </match>
         <command>balabala...</command>
     </menu>
