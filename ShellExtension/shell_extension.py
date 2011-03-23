@@ -18,6 +18,7 @@ import pythoncom
 from win32com.shell import shell, shellcon
 from win32com.server.exception import COMException
 ## win32
+import win32gui_struct
 import win32gui
 import win32con
 ## XML
@@ -38,23 +39,14 @@ class SHEMenu:
         # match 
         ## number
         number = xmlNode.find("match/number")
-        print "[==]SHEMenu::__init__ number:" , number
-        print "[==]SHEMenu::__init__ number:" , number.text
-        self.number =  int( number.text ) if number else 0
-        print "[==]SHEMenu::__init__ number:" , self.number
+        self.number =  int( number.text ) if number is not None else 0
         ## type
         type = xmlNode.find("match/type")
-        print "[==]SHEMenu::__init__ type:" , type
-        print "[==]SHEMenu::__init__ type:" , type.text
-        self.type = set( type.text.split(",") if type else [ "dir" , "file" , "background" , "link" ] )
-        print "[==]SHEMenu::__init__ number:" , self.type
+        self.type = set( type.text.split(",") if type is not None else [ "dir" , "file" , "background" , "link" ] )
         ## pattern
         pattern = xmlNode.find("match/pattern")
-        print "[==]SHEMenu::__init__ pattern:" , pattern
-        print "[==]SHEMenu::__init__ pattern:" , pattern.text if pattern else ""
-        self._pattern = pattern.text if pattern else ".*"
+        self._pattern = pattern.text if pattern is not None else ".*"
         self.pattern = re.compile( self._pattern )
-        print "[==]SHEMenu::__init__ number:" , self._pattern
 
         # command
         self.command = xmlNode.find("command").text
@@ -196,54 +188,53 @@ class ShellExtension:
 # =============== IContextMenu : from  ======================
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
         self.context.flag = uFlags
-
         self.config = SHEConfig()
-        for m in self.config.menu:
-            print m.str()
+        #for m in self.config.menu:
+        #    print m.str()
 
-        menu = self.config.getValidMenu( self.context )
-
-
-        #self.menu_item = self.GetValidMenuItem( self.selection_list , uFlags )
-        #if len( self.menu_item ) == 0:
-        #    print "==[QueryContextMenu] No Menu find"
-        #    return 0
+        self.menu = self.config.getValidMenu( self.context )
+        # not menu is valid
+        if len( self.menu ) == 0 :
+            return 0
 
         ## insert a separator
-        win32gui.InsertMenu(
-                hMenu, 
-                indexMenu,
-                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-                0, 
-                None)
-        indexMenu += 1
-
-
-        ## add sub menu
-        #root_menu = win32gui.CreatePopupMenu()
-        #win32gui.InsertMenu(
-        #        hMenu, 
-        #        indexMenu,
-        #        win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
-        #        root_menu, 
-        #        u"Py&ShellExtension")
+        #item , extra = win32gui_struct.PackMENUITEMINFO( 
+        #        fType = win32con.MFT_SEPARATOR )
+        #win32gui.InsertMenuItem( hMenu, indexMenu, 0, item )
         #indexMenu += 1
 
-        ### add items to sub menu
-        #sub_index = 0 
-        #idCmd = idCmdFirst
-        #for item in self.menu_item:
-        #    menu_name = item.find('menu').text
-        #    win32gui.InsertMenu(
-        #            root_menu, 
-        #            sub_index,
-        #            win32con.MF_STRING|win32con.MF_BYPOSITION,
-        #            idCmd, 
-        #            menu_name)
-        #    sub_index += 1
+
+        #self.cache = []
+        #idCmd = idCmdFirst + 200
+        #idCmd = 1
+        #for m in self.menu :
+        #    print m.str()
+        #    item , extra = win32gui_struct.PackMENUITEMINFO(
+        #            text=m.name , wID = idCmd  )
+        #    win32gui.InsertMenuItem( hMenu, indexMenu, 1 , item )
+        #    indexMenu += 1
         #    idCmd += 1
 
-        ## add one separator
+        #    self.cache.append( (item,extra) )
+        idCmd = idCmdFirst + 100
+        for m in self.menu:
+            print m.str()
+            win32gui.InsertMenu( 
+                    hMenu , 
+                    indexMenu ,
+                    win32con.MF_STRING | win32con.MF_BYPOSITION , 
+                    0 ,
+                    m.name )
+            indexMenu += 1
+            idCmd += 1
+
+
+        #item , extra = win32gui_struct.PackMENUITEMINFO( 
+        #        fType = win32con.MFT_SEPARATOR )
+        #win32gui.InsertMenuItem( hMenu, indexMenu, 1, item )
+        #indexMenu += 1
+
+        # add one separator
         #win32gui.InsertMenu(
         #        hMenu, 
         #        indexMenu,
@@ -252,8 +243,13 @@ class ShellExtension:
         #        None)
         #indexMenu += 1
 
-        #return idCmd-idCmdFirst # Must return number of menu items we added.
-        return 1
+        #item, extras = win32gui_struct.PackMENUITEMINFO(text="test1")
+        #win32gui.InsertMenuItem( hMenu , indexMenu , 1 , item )
+
+        #item1, extras1 = win32gui_struct.PackMENUITEMINFO(text="test2")
+        #win32gui.InsertMenuItem( hMenu , indexMenu + 1 , 1 , item1 )
+
+        return idCmd-idCmdFirst # Must return number of menu items we added.
 
     def InvokeCommand(self, ci):
         mask, hwnd, verb, params, dir, nShow, hotkey, hicon = ci
