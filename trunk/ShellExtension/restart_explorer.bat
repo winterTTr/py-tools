@@ -1,2 +1,2 @@
 taskkill /IM explorer.exe /F
-explorer.exe
+start explorer.exe
