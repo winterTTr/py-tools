@@ -215,26 +215,13 @@ class ShellExtension:
         #    indexMenu += 1
         #    idCmd += 1
 
-        #    self.cache.append( (item,extra) )
-        idCmd = idCmdFirst + 100
-        for m in self.menu:
-            print m.str()
-            win32gui.InsertMenu( 
-                    hMenu , 
-                    indexMenu ,
-                    win32con.MF_STRING | win32con.MF_BYPOSITION , 
-                    0 ,
-                    m.name )
-            indexMenu += 1
-            idCmd += 1
-
-
         #item , extra = win32gui_struct.PackMENUITEMINFO( 
         #        fType = win32con.MFT_SEPARATOR )
         #win32gui.InsertMenuItem( hMenu, indexMenu, 1, item )
         #indexMenu += 1
 
-        # add one separator
+
+        ## add one separator
         #win32gui.InsertMenu(
         #        hMenu, 
         #        indexMenu,
@@ -242,6 +229,74 @@ class ShellExtension:
         #        0,
         #        None)
         #indexMenu += 1
+
+        ##    self.cache.append( (item,extra) )
+        #idCmd = idCmdFirst
+        #for m in self.menu:
+        #    print m.str()
+        #    win32gui.InsertMenu( 
+        #            hMenu , 
+        #            indexMenu ,
+        #            win32con.MF_STRING | win32con.MF_BYPOSITION | win32con.MF_GRAYED ,
+        #            idCmd ,
+        #            m.name )
+        #    indexMenu += 1
+        #    idCmd += 1
+
+
+
+        ## add one separator
+        #win32gui.InsertMenu(
+        #        hMenu, 
+        #        indexMenu,
+        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+        #        0,
+        #        None)
+        #indexMenu += 1
+
+
+        ## insert a separator
+        win32gui.InsertMenu(
+                hMenu, 
+                indexMenu,
+                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+                0, 
+                None)
+        indexMenu += 1
+
+
+        # add sub menu
+        root_menu = win32gui.CreatePopupMenu()
+        win32gui.InsertMenu(
+                hMenu, 
+                indexMenu,
+                win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
+                root_menu, 
+                u"Py Shell Extension")
+        indexMenu += 1
+
+        ## add items to sub menu
+        sub_index = 0 
+        idCmd = idCmdFirst
+        for m in self.menu:
+            win32gui.InsertMenu(
+                    root_menu, 
+                    sub_index,
+                    win32con.MF_STRING|win32con.MF_BYPOSITION,
+                    idCmd, 
+                    m.name )
+            sub_index += 1
+            idCmd += 1
+
+        # add one separator
+        win32gui.InsertMenu(
+                hMenu, 
+                indexMenu,
+                win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
+                0,
+                None)
+        indexMenu += 1
+
 
         #item, extras = win32gui_struct.PackMENUITEMINFO(text="test1")
         #win32gui.InsertMenuItem( hMenu , indexMenu , 1 , item )
