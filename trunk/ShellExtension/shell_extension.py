@@ -11,7 +11,9 @@ __version__ = "$Revision$"[11:-2]
 
 import os
 import re
+import sys
 import _winreg
+from string import Template
 ## com
 import winerror
 import pythoncom
@@ -21,6 +23,8 @@ from win32com.server.exception import COMException
 import win32gui_struct
 import win32gui
 import win32con
+import win32process
+import win32api
 ## XML
 from xml.etree import cElementTree as et
 ## Process
@@ -197,65 +201,7 @@ class ShellExtension:
         if len( self.menu ) == 0 :
             return 0
 
-        ## insert a separator
-        #item , extra = win32gui_struct.PackMENUITEMINFO( 
-        #        fType = win32con.MFT_SEPARATOR )
-        #win32gui.InsertMenuItem( hMenu, indexMenu, 0, item )
-        #indexMenu += 1
-
-
-        #self.cache = []
-        #idCmd = idCmdFirst + 200
-        #idCmd = 1
-        #for m in self.menu :
-        #    print m.str()
-        #    item , extra = win32gui_struct.PackMENUITEMINFO(
-        #            text=m.name , wID = idCmd  )
-        #    win32gui.InsertMenuItem( hMenu, indexMenu, 1 , item )
-        #    indexMenu += 1
-        #    idCmd += 1
-
-        #item , extra = win32gui_struct.PackMENUITEMINFO( 
-        #        fType = win32con.MFT_SEPARATOR )
-        #win32gui.InsertMenuItem( hMenu, indexMenu, 1, item )
-        #indexMenu += 1
-
-
-        ## add one separator
-        #win32gui.InsertMenu(
-        #        hMenu, 
-        #        indexMenu,
-        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-        #        0,
-        #        None)
-        #indexMenu += 1
-
-        ##    self.cache.append( (item,extra) )
-        #idCmd = idCmdFirst
-        #for m in self.menu:
-        #    print m.str()
-        #    win32gui.InsertMenu( 
-        #            hMenu , 
-        #            indexMenu ,
-        #            win32con.MF_STRING | win32con.MF_BYPOSITION | win32con.MF_GRAYED ,
-        #            idCmd ,
-        #            m.name )
-        #    indexMenu += 1
-        #    idCmd += 1
-
-
-
-        ## add one separator
-        #win32gui.InsertMenu(
-        #        hMenu, 
-        #        indexMenu,
-        #        win32con.MF_SEPARATOR|win32con.MF_BYPOSITION,
-        #        0,
-        #        None)
-        #indexMenu += 1
-
-
-        ## insert a separator
+        # insert a separator
         win32gui.InsertMenu(
                 hMenu, 
                 indexMenu,
@@ -272,10 +218,10 @@ class ShellExtension:
                 indexMenu,
                 win32con.MF_STRING|win32con.MF_BYPOSITION | win32con.MF_POPUP,
                 root_menu, 
-                u"Py Shell Extension")
+                "Py Shell Extension")
         indexMenu += 1
 
-        ## add items to sub menu
+        # add items to sub menu
         sub_index = 0 
         idCmd = idCmdFirst
         for m in self.menu:
@@ -297,13 +243,6 @@ class ShellExtension:
                 None)
         indexMenu += 1
 
-
-        #item, extras = win32gui_struct.PackMENUITEMINFO(text="test1")
-        #win32gui.InsertMenuItem( hMenu , indexMenu , 1 , item )
-
-        #item1, extras1 = win32gui_struct.PackMENUITEMINFO(text="test2")
-        #win32gui.InsertMenuItem( hMenu , indexMenu + 1 , 1 , item1 )
-
         return idCmd-idCmdFirst # Must return number of menu items we added.
 
     def InvokeCommand(self, ci):
@@ -311,18 +250,36 @@ class ShellExtension:
         #win32gui.MessageBox(hwnd, u"x", u"xx", win32con.MB_OK)
         print "[==]" , mask, hwnd, verb, params, dir, nShow, hotkey, hicon
 
-        #cmd_exec = self.menu_item[verb].find('command/exec').text
-        #
-        ## make path
-        #path = subprocess.list2cmdline( self.selection_list )
-        #print "==[InvokeCommand] path = %s" % path
-        #try:
-        #    full_command_exec = cmd_exec % path 
-        #except:
-        #    full_command_exec = cmd_exec
-        #subprocess.Popen( full_command_exec )
+        selectedMenu = self.menu[verb]
+        print "[==] selected menu item:" , selectedMenu.name
 
-        
+        try :
+            t = Template( selectedMenu.command )
+            commandLine = t.safe_substitute( {
+                                "cwd" : CWD , 
+                                "python" : sys.executable , 
+                                "targets" : subprocess.list2cmdline( self.context.selection ) ,
+                                "target"  : self.context.selection , 
+                                "qtarget" : subprocess.list2cmdline( [ self.context.selection[0] ] )
+                                } )
+        except e:
+            print "[!!] error:" , e
+            return
+
+        hProcess, hThread = win32process.CreateProcess(
+                    None ,                                             #appName,
+                    commandLine ,                                      #commandLine ,
+                    None ,                                             #processAttributes ,
+                    None ,                                             #threadAttributes ,
+                    False,                                             #bInheritHandles ,
+                    win32con.NORMAL_PRIORITY_CLASS ,                   #dwCreationFlags ,
+                    None ,                                             #newEnvironment ,
+                    None ,                                             #currentDirectory ,
+                    win32process.STARTUPINFO()                         #startupinfo
+                    )
+        win32api.CloseHandle( hProcess )
+        win32api.CloseHandle( hThread )
+
 
     def GetCommandString(self, cmd, typ):
         return "Windows Shell Extesion From winterTTr"
