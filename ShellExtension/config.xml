@@ -1,27 +1,80 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <config>
+    <!--
+    Format of this config file:
+
+    <menu>
+        :: name that is shown in context menu as menu name
+        <name>open cmd here...</name>
+
+        :: condition in which this menu should be shown
+        :: any one can be omitted, which means no limit to that item 
+        <match>
+
+            :: how many item that need to be selected
+            <number>1</number>
+
+            :: which type the selected item should be
+            :: for multi-types, join them with comma
+            :: possible value ==>
+            ::   dir        = directory
+            ::   file       = all kind of file
+            ::   background = right click in the blank of a directory
+            ::   link       = you click a link file
+            <type>dir</type>
+
+            :: this is a regexp pattern used to match the file name
+            :: this one should be a valid python regular expression
+            <patter>(\.json|\.gsl)$</patter>
+
+        </match>
+
+        :: the command which will be run when the menu is select
+        :: there is some predfined variables you can use
+        ::    $cwd       = the dir that this config is under
+        ::    $target    = select full path of a single selected item
+        ::                 already quoted with <"> if necessary
+        ::    $otarget   = original full path of a single selected item
+        ::                 not quoted with <">
+        ::    $targets   = multi full path of multi selected item, seperate by space
+        ::                 each on is quoted with <"> if necessary
+        ::    $name      = selected item name without full path
+        ::                 qouted with <"> if necessary
+        ::    $oname     = selected item name without full path
+        ::                 not quoted with <">
+        <command>$python some_python_script $target</command>
+    </menu>
+    -->
+    
 	<menu>
 		<name>open cmd here...</name>
 		<match>
             <number>1</number>
 			<type>dir</type>
 		</match>
-		<command>cmd.exe /K "cd /d $target"</command>
+		<command>cmd.exe /K "cd /d $otarget"</command>
 	</menu>
 	<menu>
-		<name>Open Target Dir...</name>
+		<name>Open Target Dir</name>
 		<match>
 			<number>1</number>
 			<type>link</type>
 		</match>
-		<command>explorer /e,/select,$qtarget</command>
+		<command>explorer /e,/select,$target</command>
 	</menu>
     <menu>
-        <name>copy full path...</name>
+        <name>Copy Full Path</name>
         <match>
             <number>1</number>
         </match>
-        <command>$python\CopyToClipboard.py $qtarget</command>
+        <command>C:\Python27\pythonw.exe $cwd\CopyToClipboard.py $target</command>
+    </menu>
+    <menu>
+        <name>Copy Name</name>
+        <match>
+            <number>1</number>
+        </match>
+        <command>C:\Python27\pythonw.exe $cwd\CopyToClipboard.py $name</command>
     </menu>
     <menu>
         <name>test for file gsl...</name>
@@ -30,6 +83,6 @@
             <type>file</type>
             <pattern>(\.gsl|\.json)$</pattern>
         </match>
-        <command>cmd.exe</command>
+        <command></command>
     </menu>
 </config>

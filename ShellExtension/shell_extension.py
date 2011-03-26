@@ -38,7 +38,8 @@ CWD = os.path.split( __file__ )[0]
 class SHEMenu:
     def __init__( self , xmlNode ):
         # menu name
-        self.name = xmlNode.find("name").text
+        name = xmlNode.find("name")
+        self.name = name.text if name is not None else "no name" 
 
         # match 
         ## number
@@ -50,19 +51,37 @@ class SHEMenu:
         ## pattern
         pattern = xmlNode.find("match/pattern")
         self._pattern = pattern.text if pattern is not None else ".*"
-        self.pattern = re.compile( self._pattern )
+        try :
+            self.pattern = re.compile( self._pattern )
+        except:
+            print "[!!] SHEMenu::__init__ re.compile error:" , self._pattern
+            self.pattern = re.compile( ".*" )
 
         # command
-        self.command = xmlNode.find("command").text
+        command = xmlNode.find("command")
+        self.command = command.text if command is not None else ""
 
 
     def isValid( self , context ):
-        if context.defaultOnly: return False
-        if self.number != 0 and self.number != len ( context.selection ): return False
-        if not self.type.issubset( context.type ): return False
+
+        if context.defaultOnly:
+            print "[++]SHEMenu::isValid <%s> invalid as defaultOnly" % self.name 
+            return False
+
+        if self.number != 0 and self.number != len ( context.selection ): 
+            print "[++]SHEMenu::isValid <%s> invalid as number [%d] should be [%d] " \
+                    % ( self.name  , self.number , len( context.selection ) )
+            return False
+
+        if not context.type.issubset ( self.type  ): 
+            print "[++]SHEMenu::isValid <%s> invalid as type [%s] should be[%s]" \
+                % ( self.name  , str( self.type ) , str( context.type ) )
+            return False
 
         for s in context.selection:
             if not self.pattern.match( s ):
+                print "[++]SHEMenu::isValid <%s> invalid as pattern[%s]" \
+                    % ( self.name  , str( self._pattern ) )
                 return False
         return True
 
@@ -211,7 +230,7 @@ class ShellExtension:
         indexMenu += 1
 
 
-        # add sub menu
+        # add popup menu
         root_menu = win32gui.CreatePopupMenu()
         win32gui.InsertMenu(
                 hMenu, 
@@ -255,31 +274,30 @@ class ShellExtension:
 
         try :
             t = Template( selectedMenu.command )
-            commandLine = t.safe_substitute( {
-                                "cwd" : CWD , 
-                                "python" : sys.executable , 
-                                "targets" : subprocess.list2cmdline( self.context.selection ) ,
-                                "target"  : self.context.selection , 
-                                "qtarget" : subprocess.list2cmdline( [ self.context.selection[0] ] )
-                                } )
-        except e:
-            print "[!!] error:" , e
-            return
-
-        hProcess, hThread = win32process.CreateProcess(
-                    None ,                                             #appName,
-                    commandLine ,                                      #commandLine ,
-                    None ,                                             #processAttributes ,
-                    None ,                                             #threadAttributes ,
-                    False,                                             #bInheritHandles ,
-                    win32con.NORMAL_PRIORITY_CLASS ,                   #dwCreationFlags ,
-                    None ,                                             #newEnvironment ,
-                    None ,                                             #currentDirectory ,
-                    win32process.STARTUPINFO()                         #startupinfo
-                    )
-        win32api.CloseHandle( hProcess )
-        win32api.CloseHandle( hThread )
-
+            keyMap = {
+                    "cwd" : CWD , 
+                    #"python"  : subprocess.list2cmdline( [ sys.executable ] ) ,
+                    "targets" : subprocess.list2cmdline( self.context.selection ) ,
+                    "otarget" : self.context.selection[0] , 
+                    "target"  : subprocess.list2cmdline( [ self.context.selection[0] ] ) ,
+                    "name"    : subprocess.list2cmdline( [ os.path.split( self.context.selection[0] )[1] ] )
+                    }
+            commandLine = t.safe_substitute( keyMap )
+            print "[==] InvokeCommand : command line=" , commandLine
+            hProcess, hThread , dwProcessId, dwThreadId = win32process.CreateProcess(
+                        None ,                                      
+                        commandLine ,                               
+                        None ,                                      
+                        None ,                                      
+                        False,                                      
+                        win32con.NORMAL_PRIORITY_CLASS ,            
+                        None ,                                      
+                        None ,                                      
+                        win32process.STARTUPINFO()  )               
+            win32api.CloseHandle( hProcess )
+            win32api.CloseHandle( hThread )
+        except Exception as e:
+            print "[!!]InvokeCommand error:" , e
 
     def GetCommandString(self, cmd, typ):
         return "Windows Shell Extesion From winterTTr"
