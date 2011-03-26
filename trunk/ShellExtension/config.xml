@@ -47,7 +47,7 @@
     -->
     
 	<menu>
-		<name>open cmd here...</name>
+		<name>Open Console ...</name>
 		<match>
             <number>1</number>
 			<type>dir</type>
