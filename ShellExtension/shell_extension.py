@@ -12,6 +12,7 @@ __version__ = "$Revision$"[11:-2]
 import os
 import re
 import sys
+import types
 import _winreg
 from string import Template
 ## com
@@ -47,7 +48,7 @@ class SHEMenu:
         self.number =  int( number.text ) if number is not None else 0
         ## type
         type = xmlNode.find("match/type")
-        self.type = set( type.text.split(",") if type is not None else [ "dir" , "file" , "background" , "link" ] )
+        self.type = set( type.text.split(",") if type is not None else [ "dir" , "file" ] )
         ## pattern
         pattern = xmlNode.find("match/pattern")
         self._pattern = pattern.text if pattern is not None else ".*"
@@ -125,17 +126,13 @@ class SHEContext:
             ## NOTE: link will also be trade as file
             self.type.add("file")
 
-    @property
-    def flag( self ):
-        return self.flag
-
-    @flag.setter
-    def flag( self, uFlags ):
+    def setFlag( self, uFlags ):
         self.flag = uFlags
         if (uFlags & 0x000F) == shellcon.CMF_NORMAL: # use == here, since CMF_NORMAL=0
             print "[==]SHEContext::flag CMF_NORMAL"
         elif uFlags & shellcon.CMF_VERBSONLY:        # Short cut item
-            self.type.add('link')
+            #self.type.add('link')
+            #self.type.add('file')
             print "[==]SHEContext::flag CMF_VERBSONLY"
         elif uFlags & shellcon.CMF_EXPLORE:          # in explorer
             print "[==]SHEContext::flag CMF_EXPLORE"
@@ -210,7 +207,7 @@ class ShellExtension:
 
 # =============== IContextMenu : from  ======================
     def QueryContextMenu(self, hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags):
-        self.context.flag = uFlags
+        self.context.setFlag ( uFlags )
         self.config = SHEConfig()
         #for m in self.config.menu:
         #    print m.str()
@@ -266,8 +263,11 @@ class ShellExtension:
 
     def InvokeCommand(self, ci):
         mask, hwnd, verb, params, dir, nShow, hotkey, hicon = ci
-        #win32gui.MessageBox(hwnd, u"x", u"xx", win32con.MB_OK)
         print "[==]" , mask, hwnd, verb, params, dir, nShow, hotkey, hicon
+
+        if type( verb ) != types.IntType:
+            print "[!!] InvokeCommand: not a valid index [%s]" % str( verb )
+            return
 
         selectedMenu = self.menu[verb]
         print "[==] selected menu item:" , selectedMenu.name
